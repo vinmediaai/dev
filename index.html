@@ -26,9 +26,24 @@
         try {
           console.log("[AI] Starting background removal via WebGPU...");
           const result = await removeBackground(imageUrl);
-          return result.blobUrl; 
+          // result.blobUrl is the transparent PNG blob URL
+          if(result && result.blobUrl) return result.blobUrl;
+          // Some versions return result directly as a blob URL string
+          if(typeof result === 'string') return result;
+          // If result is a Blob, create object URL
+          if(result instanceof Blob) return URL.createObjectURL(result);
+          throw new Error('Unexpected result format: ' + JSON.stringify(Object.keys(result||{})));
         } catch (err) {
           console.error("AI Processing Error:", err);
+          // WebGPU device hung on Windows — try once more with a delay
+          if(err.message && (err.message.includes('device') || err.message.includes('GPU') || err.message.includes('lost'))) {
+            console.log("[AI] GPU error detected — waiting 1s and retrying...");
+            await new Promise(r => setTimeout(r, 1000));
+            const result2 = await removeBackground(imageUrl);
+            if(result2 && result2.blobUrl) return result2.blobUrl;
+            if(typeof result2 === 'string') return result2;
+            if(result2 instanceof Blob) return URL.createObjectURL(result2);
+          }
           throw err;
         }
       };
@@ -38,6 +53,9 @@
 
     } catch (e) {
       console.error("Initialization Failed:", e);
+      // Mark as failed so UI can show appropriate message
+      window._rembgFailed = true;
+      window._rembgFailMsg = e.message || 'Engine failed to load';
     }
   })();
 </script>
@@ -1585,7 +1603,18 @@ async function doRemoveBackground(imgFile){
 
   try{
     // Guard: engine must be ready (loaded via <script type="module"> in <head>)
-    if(!window._rembgRemoveBackground) throw new Error('AI engine still loading — try again in a moment');
+    // Check if engine failed to load
+    if(window._rembgFailed) throw new Error('WebGPU not supported in this browser. Try Chrome or Edge on a different device.');
+    // Check if engine is still loading
+    if(!window._rembgRemoveBackground){
+      // Wait up to 5s for engine to load
+      let waited = 0;
+      while(!window._rembgRemoveBackground && waited < 5000){
+        await new Promise(r => setTimeout(r, 200));
+        waited += 200;
+      }
+      if(!window._rembgRemoveBackground) throw new Error('AI engine still loading — please wait a moment and try again');
+    }
 
     rembgSetProg(15, 'Loading background removal model…');
 
@@ -1623,8 +1652,23 @@ async function doRemoveBackground(imgFile){
     window._rembgOnProgress = null;
     rembgSetProg(null, '');
     if(btn)   btn.style.opacity = '1';
-    if(subEl) subEl.textContent = 'Failed — try again';
-    toast('❌ Background removal failed: ' + (e.message || e), 'err');
+    
+    // Give a helpful message based on error type
+    let errMsg = e.message || String(e);
+    let toastMsg = '❌ Background removal failed';
+    if(errMsg.includes('device') || errMsg.includes('GPU') || errMsg.includes('DXGI') || errMsg.includes('lost')){
+      toastMsg = '❌ GPU error — try refreshing the page and using Chrome';
+      if(subEl) subEl.textContent = 'GPU error — refresh & try Chrome';
+    } else if(errMsg.includes('WebGPU') || errMsg.includes('supported')){
+      toastMsg = '❌ WebGPU not supported — try Chrome 113+';
+      if(subEl) subEl.textContent = 'WebGPU not supported in this browser';
+    } else if(errMsg.includes('loading') || errMsg.includes('wait')){
+      toastMsg = '⚠️ ' + errMsg;
+      if(subEl) subEl.textContent = errMsg;
+    } else {
+      if(subEl) subEl.textContent = 'Failed — try again';
+    }
+    toast(toastMsg, 'err');
     rembgMode = 'use';
     document.getElementById('rembgUse').classList.add('active');
     document.getElementById('rembgRemove').classList.remove('active');
