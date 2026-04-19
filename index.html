@@ -6,59 +6,7 @@
 <title>VinSnap — Product Image Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script type="module">
-  import { removeBackground, subscribeToProgress } from 'https://esm.sh/rembg-webgpu@0.2.1';
 
-  (async () => {
-    try {
-      window._rembgReady = false;
-
-      subscribeToProgress((s) => {
-        if (window._rembgOnProgress) {
-          window._rembgOnProgress({ 
-            phase: s.phase,
-            progress: s.progress 
-          });
-        }
-      });
-
-      window._rembgRemoveBackground = async function(imageUrl) {
-        try {
-          console.log("[AI] Starting background removal via WebGPU...");
-          const result = await removeBackground(imageUrl);
-          // result.blobUrl is the transparent PNG blob URL
-          if(result && result.blobUrl) return result.blobUrl;
-          // Some versions return result directly as a blob URL string
-          if(typeof result === 'string') return result;
-          // If result is a Blob, create object URL
-          if(result instanceof Blob) return URL.createObjectURL(result);
-          throw new Error('Unexpected result format: ' + JSON.stringify(Object.keys(result||{})));
-        } catch (err) {
-          console.error("AI Processing Error:", err);
-          // WebGPU device hung on Windows — try once more with a delay
-          if(err.message && (err.message.includes('device') || err.message.includes('GPU') || err.message.includes('lost'))) {
-            console.log("[AI] GPU error detected — waiting 1s and retrying...");
-            await new Promise(r => setTimeout(r, 1000));
-            const result2 = await removeBackground(imageUrl);
-            if(result2 && result2.blobUrl) return result2.blobUrl;
-            if(typeof result2 === 'string') return result2;
-            if(result2 instanceof Blob) return URL.createObjectURL(result2);
-          }
-          throw err;
-        }
-      };
-
-      window._rembgReady = true;
-      console.log("[AI] rembg-webgpu Engine Ready");
-
-    } catch (e) {
-      console.error("Initialization Failed:", e);
-      // Mark as failed so UI can show appropriate message
-      window._rembgFailed = true;
-      window._rembgFailMsg = e.message || 'Engine failed to load';
-    }
-  })();
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── RESET & BASE ── */
@@ -427,7 +375,6 @@ input#fileInput{display:none}
 .showcase-progress-fill.animating{transition:width linear}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@bunnio/rembg-web@1.0.2/dist/index.umd.min.js"></script>
 </head>
 <body>
 
@@ -1594,6 +1541,36 @@ function rembgSetProg(pct, label){
   if(lbl)  lbl.textContent  = label || '';
 }
 
+
+// ── BACKGROUND REMOVAL — onnxruntime-web (no workers, no external modules, GitHub Pages safe) ──
+let _rembgSession = null;
+let _rembgLoading = false;
+
+const RMBG_MODEL_URL = 'https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx';
+
+async function _loadRembgModel(){
+  if(_rembgSession) return _rembgSession;
+  if(_rembgLoading) {
+    // Wait for concurrent load to finish
+    while(_rembgLoading) await new Promise(r=>setTimeout(r,200));
+    return _rembgSession;
+  }
+  _rembgLoading = true;
+  try{
+    // Configure WASM — single thread, no SharedArrayBuffer needed
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.simd = true;
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/';
+    _rembgSession = await ort.InferenceSession.create(RMBG_MODEL_URL, {
+      executionProviders: ['wasm'],
+      graphOptimizationLevel: 'all'
+    });
+    return _rembgSession;
+  } finally {
+    _rembgLoading = false;
+  }
+}
+
 async function doRemoveBackground(imgFile){
   const subEl = document.getElementById('rembgRemoveSub');
   const btn   = document.getElementById('rembgRemove');
@@ -1602,46 +1579,80 @@ async function doRemoveBackground(imgFile){
   rembgSetProg(5, 'Initialising…');
 
   try{
-    // Guard: engine must be ready (loaded via <script type="module"> in <head>)
-    // Check if engine failed to load
-    if(window._rembgFailed) throw new Error('WebGPU not supported in this browser. Try Chrome or Edge on a different device.');
-    // Check if engine is still loading
-    if(!window._rembgRemoveBackground){
-      // Wait up to 5s for engine to load
-      let waited = 0;
-      while(!window._rembgRemoveBackground && waited < 5000){
-        await new Promise(r => setTimeout(r, 200));
-        waited += 200;
-      }
-      if(!window._rembgRemoveBackground) throw new Error('AI engine still loading — please wait a moment and try again');
+    if(typeof ort === 'undefined') throw new Error('ONNX Runtime not loaded — check network');
+
+    rembgSetProg(10, 'Downloading model (~176MB, cached after first use)…');
+    if(subEl) subEl.textContent = 'Downloading model…';
+
+    const session = await _loadRembgModel();
+
+    rembgSetProg(70, 'Processing image…');
+    if(subEl) subEl.textContent = 'Removing background…';
+
+    // Draw image to canvas at model input size (1024×1024)
+    const SIZE = 1024;
+    const img = new Image();
+    const objUrl = URL.createObjectURL(imgFile);
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=objUrl; });
+    URL.revokeObjectURL(objUrl);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE; canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, SIZE, SIZE);
+    const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
+
+    // Normalise to [-1, 1] and reshape to [1, 3, H, W] (CHW format)
+    const { data } = imageData;
+    const input = new Float32Array(3 * SIZE * SIZE);
+    const mean = [0.485, 0.456, 0.406];
+    const std  = [0.229, 0.224, 0.225];
+    for(let i = 0; i < SIZE * SIZE; i++){
+      input[i]                  = (data[i*4]   / 255 - mean[0]) / std[0]; // R
+      input[i + SIZE*SIZE]      = (data[i*4+1] / 255 - mean[1]) / std[1]; // G
+      input[i + SIZE*SIZE*2]    = (data[i*4+2] / 255 - mean[2]) / std[2]; // B
     }
 
-    rembgSetProg(15, 'Loading background removal model…');
+    const tensor = new ort.Tensor('float32', input, [1, 3, SIZE, SIZE]);
+    const feeds  = {};
+    feeds[session.inputNames[0]] = tensor;
+    const results = await session.run(feeds);
+    const mask    = results[session.outputNames[0]].data;
 
-    // Wire progress events from engine → UI progress bar
-    window._rembgOnProgress = ({ phase, progress }) => {
-      const pct = Math.min(90, Math.round(15 + (progress || 0) * 0.75));
-      const labels = { downloading:'Downloading model…', building:'Preparing model…', processing:'Processing image…' };
-      rembgSetProg(pct, labels[phase] || 'Working…');
-      if(subEl) subEl.textContent = labels[phase] || 'Working…';
-    };
+    rembgSetProg(88, 'Applying transparency…');
 
-    // Engine takes an object URL, returns a blob URL string directly
-    const objectURL = URL.createObjectURL(imgFile);
-    const resultURL = await window._rembgRemoveBackground(objectURL);
-    URL.revokeObjectURL(objectURL);
+    // Apply mask to original image at full resolution
+    const origCanvas = document.createElement('canvas');
+    origCanvas.width  = img.naturalWidth;
+    origCanvas.height = img.naturalHeight;
+    const origCtx = origCanvas.getContext('2d');
+    origCtx.drawImage(img, 0, 0);
+    const origData = origCtx.getImageData(0, 0, origCanvas.width, origCanvas.height);
 
-    window._rembgOnProgress = null;
-    rembgSetProg(95, 'Finalising…');
+    // Scale mask back to original dimensions
+    const scaleX = img.naturalWidth  / SIZE;
+    const scaleY = img.naturalHeight / SIZE;
+    for(let y = 0; y < img.naturalHeight; y++){
+      for(let x = 0; x < img.naturalWidth; x++){
+        const mx = Math.min(SIZE-1, Math.round(x / scaleX));
+        const my = Math.min(SIZE-1, Math.round(y / scaleY));
+        const alpha = Math.round(
+          Math.max(0, Math.min(1, mask[my * SIZE + mx])) * 255
+        );
+        origData.data[(y * img.naturalWidth + x) * 4 + 3] = alpha;
+      }
+    }
+    origCtx.putImageData(origData, 0, 0);
 
-    // resultURL is already a blob: URL — assign directly, no createObjectURL needed
+    rembgSetProg(96, 'Finalising…');
+    const blob = await new Promise(res => origCanvas.toBlob(res, 'image/png', 1.0));
     if(rembgBlobURL) URL.revokeObjectURL(rembgBlobURL);
-    rembgBlobURL = resultURL;
+    rembgBlobURL = URL.createObjectURL(blob);
     document.getElementById('previewImg').src = rembgBlobURL;
 
     if(btn)   btn.style.opacity = '1';
     if(subEl) subEl.textContent = 'Done ✓ Background removed';
-    rembgSetProg(100, 'Done ✓');
+    rembgSetProg(100, `Done ✓ ${img.naturalWidth}×${img.naturalHeight}px`);
     toast('✅ Background removed!', 'ok');
     setTimeout(() => rembgSetProg(null, ''), 2500);
 
@@ -1649,26 +1660,13 @@ async function doRemoveBackground(imgFile){
     if(dlWrap) dlWrap.style.display = '';
 
   }catch(e){
-    window._rembgOnProgress = null;
     rembgSetProg(null, '');
     if(btn)   btn.style.opacity = '1';
-    
-    // Give a helpful message based on error type
-    let errMsg = e.message || String(e);
-    let toastMsg = '❌ Background removal failed';
-    if(errMsg.includes('device') || errMsg.includes('GPU') || errMsg.includes('DXGI') || errMsg.includes('lost')){
-      toastMsg = '❌ GPU error — try refreshing the page and using Chrome';
-      if(subEl) subEl.textContent = 'GPU error — refresh & try Chrome';
-    } else if(errMsg.includes('WebGPU') || errMsg.includes('supported')){
-      toastMsg = '❌ WebGPU not supported — try Chrome 113+';
-      if(subEl) subEl.textContent = 'WebGPU not supported in this browser';
-    } else if(errMsg.includes('loading') || errMsg.includes('wait')){
-      toastMsg = '⚠️ ' + errMsg;
-      if(subEl) subEl.textContent = errMsg;
-    } else {
-      if(subEl) subEl.textContent = 'Failed — try again';
-    }
-    toast(toastMsg, 'err');
+    if(subEl) subEl.textContent = 'Failed — try again';
+    let msg = '❌ Background removal failed: ' + (e.message || e);
+    if((e.message||'').toLowerCase().includes('176') || (e.message||'').toLowerCase().includes('fetch'))
+      msg = '❌ Model download failed — check your internet connection';
+    toast(msg, 'err');
     rembgMode = 'use';
     document.getElementById('rembgUse').classList.add('active');
     document.getElementById('rembgRemove').classList.remove('active');
@@ -1683,6 +1681,7 @@ function downloadRemovedBg(){
   a.download = (file ? file.name.replace(/\.[^.]+$/, '') : 'product') + '_no_bg.png';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
+
 
 function setRembg(mode){
   rembgMode = mode;
@@ -2320,13 +2319,13 @@ function showDone(data){
   generatedImages.forEach(img=>{
     const label=(img.label||'image').toLowerCase();
     const dlUrl=img.fileId?'https://drive.google.com/uc?export=download&id='+img.fileId:(img.downloadUrl||'');
-    const thumbUrl=img.fileId?'https://drive.google.com/thumbnail?id='+img.fileId+'&sz=w400':(img.thumbnailUrl||'');
+    const thumbUrl=img.fileId?'https://lh3.googleusercontent.com/d/'+img.fileId+'=w400':(img.thumbnailUrl||'');
     // dlUrl kept internal — exposed only via JS download handler, not in href
     const card=document.createElement('div');
     card.className='img-result-card';
     card.innerHTML=`
       <div class="img-result-thumb">
-        ${thumbUrl?`<img src="${thumbUrl}" alt="${img.label||'Image'}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:'' }
+        ${thumbUrl?`<img src="${thumbUrl}" alt="${img.label||'Image'}" loading="lazy" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:'' }
         <span class="img-placeholder" style="display:${thumbUrl?'none':'flex'}">${EMOJIS[label]||'🖼️'}</span>
       </div>
       <div class="img-result-info">
