@@ -25,7 +25,9 @@ import {
 const MODEL_ID      = 'briaai/RMBG-1.4';
 const CHUNK_HEIGHT  = 512;   // px — strips to slice large images into
 const PREVIEW_MAX   = 450;   // px — max dimension for preview thumbnail
-const TIMEOUT_MS    = 120_000; // 2 min hard timeout per image
+const TIMEOUT_MS_WEBGPU = 120_000;  // 2 min for WebGPU
+const TIMEOUT_MS_WASM   = 600_000;  // 10 min for WASM (much slower)
+const WASM_INFER_MAX_PX = 1024;     // downsample input on WASM to keep it under ~1 min
  
 env.allowLocalModels  = false;
 env.useBrowserCache   = true;   // cache model weights after first download
@@ -276,6 +278,8 @@ self.onmessage = async (e) => {
     // Track blobs so we can tell the main thread which to revoke
     const blobsCreated = [];
  
+    // Use a longer timeout on WASM — inference is CPU-bound and much slower
+    const TIMEOUT_MS = device === 'wasm' ? TIMEOUT_MS_WASM : TIMEOUT_MS_WEBGPU;
     const timeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error(`Timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS)
     );
@@ -285,14 +289,28 @@ self.onmessage = async (e) => {
         (async () => {
           send('progress', { id, phase: 'processing', progress: 0 });
  
-          const image = await RawImage.fromURL(imageUrl);
-          const { width, height } = image;
+          const rawImage = await RawImage.fromURL(imageUrl);
+          const { width: origW, height: origH } = rawImage;
  
+          // On WASM, downsample very large images before inference to stay within
+          // a reasonable time budget. The composited result is then scaled back up.
+          let inferImage = rawImage;
+          if (device === 'wasm') {
+            const longestSide = Math.max(origW, origH);
+            if (longestSide > WASM_INFER_MAX_PX) {
+              const s = WASM_INFER_MAX_PX / longestSide;
+              inferImage = await rawImage.resize(Math.round(origW * s), Math.round(origH * s));
+              send('status', { message: `WASM mode — resized to ${inferImage.width}×${inferImage.height} for processing…` });
+            }
+          }
+ 
+          const { width, height } = inferImage;
           send('status', { message: `Processing ${width}×${height}…` });
  
-          // Full-res mask
-          const mask    = await runInference(image);
-          const blobUrl = await compositeToBlob(image, mask);
+          // Full-res mask (on the possibly-downsampled image)
+          const mask    = await runInference(inferImage);
+          // Composite on the downsampled image; preview will be generated from this
+          const blobUrl = await compositeToBlob(inferImage, mask);
           blobsCreated.push(blobUrl);
  
           // Preview (≤ PREVIEW_MAX px) — scale down the already-composited blob
