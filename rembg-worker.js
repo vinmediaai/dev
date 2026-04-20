@@ -101,15 +101,28 @@ function installProgressProxy() {
   };
 }
  
-/** Resize a RawImage so its longest side ≤ maxPx (keeps aspect ratio) */
-async function resizeForPreview(image) {
-  const { width, height } = image;
-  const scale = PREVIEW_MAX / Math.max(width, height);
-  if (scale >= 1) return image; // already small enough
-  return image.resize(
-    Math.round(width  * scale),
-    Math.round(height * scale),
-  );
+/**
+ * Scale down an existing PNG blob URL to fit within PREVIEW_MAX px on its longest side.
+ * Uses OffscreenCanvas — no RawImage channel-count concerns.
+ */
+async function scaleDownBlob(blobUrl, origWidth, origHeight) {
+  const scale = Math.min(1, PREVIEW_MAX / Math.max(origWidth, origHeight));
+  if (scale >= 1) return blobUrl; // already small — reuse the same URL
+ 
+  const w = Math.round(origWidth  * scale);
+  const h = Math.round(origHeight * scale);
+ 
+  const resp   = await fetch(blobUrl);
+  const blob   = await resp.blob();
+  const bitmap = await createImageBitmap(blob);
+ 
+  const canvas = new OffscreenCanvas(w, h);
+  const ctx    = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+ 
+  const preview = await canvas.convertToBlob({ type: 'image/png' });
+  return URL.createObjectURL(preview);
 }
  
 /**
@@ -282,19 +295,9 @@ self.onmessage = async (e) => {
           const blobUrl = await compositeToBlob(image, mask);
           blobsCreated.push(blobUrl);
  
-          // Preview (≤ PREVIEW_MAX px) — scale the existing mask instead of
-          // running a second inference pass (which can stall the GPU).
-          const smallImg  = await resizeForPreview(image);
-          const needsScale = smallImg.width !== image.width || smallImg.height !== image.height;
-          let previewUrl;
-          if (needsScale) {
-            // Wrap the full-res mask as a RawImage and resize it to match the preview dimensions
-            const maskImg   = new RawImage(mask, image.width, image.height, 1);
-            const smallMask = await maskImg.resize(smallImg.width, smallImg.height);
-            previewUrl = await compositeToBlob(smallImg, smallMask.data);
-          } else {
-            previewUrl = await compositeToBlob(smallImg, mask);
-          }
+          // Preview (≤ PREVIEW_MAX px) — scale down the already-composited blob
+          // using OffscreenCanvas. Avoids any channel-count mismatch with RawImage.
+          const previewUrl = await scaleDownBlob(blobUrl, image.width, image.height);
           blobsCreated.push(previewUrl);
  
           return {
