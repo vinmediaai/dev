@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VinSnap — Product Image Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-  // Set this to your Oracle/HTTPS endpoint before deployment if needed.
-  window.REMBG_API_URL = window.REMBG_API_URL || 'https://vinrembg.vinmediaai.online';
+  // Background removal API endpoint.
+  // No trailing slash; the app appends /remove-bg itself.
+  window.REMBG_API_URL = 'https://vinrembg.vinmediaai.online';
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -1563,6 +1565,8 @@ async function doRemoveBackground(imgFile){
     const apiBase = (window.REMBG_API_URL || '').replace(/\/+$/, '');
     if(!apiBase) throw new Error('Background removal API URL is not configured.');
 
+    const endpoint = new URL('/remove-bg', apiBase).toString();
+
     const formData = new FormData();
     formData.append('image', imgFile, imgFile.name || 'product.png');
 
@@ -1572,8 +1576,11 @@ async function doRemoveBackground(imgFile){
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-    const response = await fetch(apiBase + '/remove-bg', {
+    const response = await fetch(endpoint, {
       method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',
+      redirect: 'follow',
       body: formData,
       signal: controller.signal
     });
