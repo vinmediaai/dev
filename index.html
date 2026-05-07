@@ -1165,6 +1165,7 @@ const DRIVE_FOLDER      = '1dOWQloKxJFNTU0PF2WfjF9AL0EPu-VA_';
 const MAX_USES          = 5;
 const USE_PERIOD_DAYS   = 10;
 const POLL_INTERVAL_MS  = 4000;
+const MAX_POLL_MS       = 5 * 60 * 1000; // 5 min hard stop — prevents infinite polling
 // Queue tables defined in queue section below
 // QUEUE_POLL_MS defined in queue section
 // QUEUE_HEARTBEAT_MS defined in queue section
@@ -1678,6 +1679,42 @@ function setRembg(mode){
 }
 function toBase64(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(f); }); }
 
+// Resize + compress image before upload — critical for mobile camera photos (10-20 MB)
+// Reduces to max 1500px longest side, JPEG 0.82 quality → cuts payload ~95%
+async function compressImage(file, maxPx=1500, quality=0.82){
+  return new Promise(resolve=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(w<=maxPx && h<=maxPx && file.size<800*1024){ resolve(file); return; }
+      const scale = Math.min(1, maxPx/Math.max(w,h));
+      w=Math.round(w*scale); h=Math.round(h*scale);
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      canvas.toBlob(blob=>resolve(blob||file),'image/jpeg',quality);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); resolve(file); };
+    img.src=url;
+  });
+}
+
+// fetch() with explicit timeout — prevents silent hang on slow/dropped mobile connections
+async function fetchWithTimeout(url, options={}, timeoutMs=90000){
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(), timeoutMs);
+  try{
+    return await fetch(url, {...options, signal:ctrl.signal});
+  } catch(err){
+    if(err.name==='AbortError') throw new Error('Request timed out — check your connection and try again.');
+    throw new Error(err?.message || String(err) || 'Network error — check your connection.');
+  } finally{
+    clearTimeout(tid);
+  }
+}
+
 // ══ VALIDATE ══
 function validate(){
   const cat=document.getElementById('category').value;
@@ -1988,9 +2025,20 @@ async function evaluateQueue(mode, submitFn, sel=[]){
 
   // Our row not found — expired or cleaned
   if(myIdx === -1){
-    toast('⏳ Queue entry expired — please try again.', 'warn');
     stopQueuePolling(); stopQueueHeartbeat();
     queueRowId = null; queueDispatching = false;
+    hideQB(isGen);
+    toast('⏳ Queue entry expired — please try again.', 'warn');
+    if(isGen){
+      document.getElementById('genBtn').disabled = false;
+      const pw = document.getElementById('progPanelWrap');
+      if(pw) pw.style.display = 'none';
+      document.getElementById('progPanel').classList.remove('on');
+      document.getElementById('promptPanel').classList.add('on');
+    } else {
+      document.getElementById('analyseBtn').disabled = false;
+      document.getElementById('analysePanel').classList.remove('on');
+    }
     return;
   }
 
@@ -2034,11 +2082,22 @@ async function evaluateQueue(mode, submitFn, sel=[]){
     hideQB(isGen);
     startPolling(qData.jobId, sel, mode);
   } catch(err){
-    // Reset to waiting if submit failed
-    queueDispatching = false;
-    await queueUpdate(table, queueRowId, { status: 'waiting' });
+    // Submit failed — stop completely, no retry (prevents API abuse)
+    stopQueuePolling(); stopQueueHeartbeat();
+    try{ await queueDelete(table, queueRowId); } catch(_){}
+    queueRowId = null; queueDispatching = false;
+    hideQB(isGen);
     toast('❌ Submit failed: ' + err.message, 'err');
-    showQB(isGen ? 'Waiting in queue…' : 'Waiting to analyse…', pos, '', isGen);
+    if(isGen){
+      document.getElementById('genBtn').disabled = false;
+      const pw = document.getElementById('progPanelWrap');
+      if(pw) pw.style.display = 'none';
+      document.getElementById('progPanel').classList.remove('on');
+      document.getElementById('promptPanel').classList.add('on');
+    } else {
+      document.getElementById('analyseBtn').disabled = false;
+      document.getElementById('analysePanel').classList.remove('on');
+    }
   }
 }
 
@@ -2047,10 +2106,33 @@ function stopPolling(){ clearInterval(pollInterval); pollInterval=null; }
 async function startPolling(jobId,sel,mode){
   currentJobId=jobId; stopPolling();
   const isGen=mode==='generate';
+  const pollStart=Date.now();
+  let   failCount=0;
+  const MAX_FAILS=3; // 3 consecutive fetch errors → stop
+
+  function abortPolling(msg, isWarn){
+    stopPolling(); hideQB(isGen);
+    queueFinalize().catch(()=>{});
+    toast(isWarn ? '⏳ '+msg : '❌ '+msg, isWarn?'warn':'err');
+    if(isGen){ document.getElementById('genBtn').disabled=false;
+               const pw=document.getElementById('progPanelWrap');
+               if(pw) pw.style.display='none';
+               document.getElementById('progPanel').classList.remove('on');
+               document.getElementById('promptPanel').classList.add('on'); }
+    else { document.getElementById('analyseBtn').disabled=false;
+           document.getElementById('analysePanel').classList.remove('on'); }
+  }
+
   pollInterval=setInterval(async()=>{
+    // Hard timeout — stop polling after MAX_POLL_MS regardless
+    if(Date.now()-pollStart > MAX_POLL_MS){
+      abortPolling('Job timed out after 5 minutes. Please try again.', true);
+      return;
+    }
     try{
       const r=await fetch(`${JOB_STATUS}?jobId=${encodeURIComponent(jobId)}`);
-      if(!r.ok) return;
+      if(!r.ok){ failCount++; if(failCount>=MAX_FAILS){ abortPolling('Cannot reach server. Check your connection.', false); } return; }
+      failCount=0; // reset on success
       const data=await r.json();
       if(data.status==='waiting'){ showQB('Waiting…',data.position||'?',data.etaMin?`~${data.etaMin} min wait`:'',isGen); }
       else if(data.status==='processing'){ showQB(isGen?'Generating your images…':'Analysing your product…',null,'',isGen); }
@@ -2075,9 +2157,7 @@ async function startPolling(jobId,sel,mode){
         setTA('lifestyle2',data.lifestylePrompt2||'');
         setTA('lifestyle3',data.lifestylePrompt3||'');
         Object.keys(CHAR_LIMITS).forEach(k=>updateCounter(k,CHAR_LIMITS[k]));
-        // Apply selected bg color to hero
         if(selectedBgColor) rebuildHeroPrompt();
-        // Apply selected infographic style
         if(selectedInfoStyle) rebuildInfoPrompt();
         document.getElementById('analysePanel').classList.remove('on');
         document.getElementById('promptPanel').classList.add('on');
@@ -2097,28 +2177,21 @@ async function startPolling(jobId,sel,mode){
         showDone(data);
       }
       else if(data.status==='failed'){
-        stopPolling(); hideQB(isGen);
-        await queueFinalize();
-        if(isGen){
-          toast('❌ Generation failed. Please try again.','err');
-          document.getElementById('genBtn').disabled=false;
-          const progWrapF=document.getElementById('progPanelWrap');
-          if(progWrapF) progWrapF.style.display='none';
-          document.getElementById('progPanel').classList.remove('on');
-          document.getElementById('promptPanel').classList.add('on');
-        } else {
-          toast('❌ Analysis failed. Please try again.','err');
-          document.getElementById('analyseBtn').disabled=false;
-          document.getElementById('analysePanel').classList.remove('on');
-        }
+        const errDetail = data.error ? ` (${data.error})` : '';
+        if(isGen){ abortPolling('Generation failed'+errDetail+'. Please try again.', false); }
+        else      { abortPolling('Analysis failed'+errDetail+'. Please try again.', false); }
       }
       else if(data.status==='not_found'){
-        stopPolling(); hideQB(isGen);
-        await queueFinalize();
-        if(isGen){ forceAllDone('pstepsList'); document.getElementById('pbarFill').style.width='100%'; showDoneTimeout(); }
-        else { toast('⏳ Analysis timed out — please try again.','warn'); document.getElementById('analyseBtn').disabled=false; document.getElementById('analysePanel').classList.remove('on'); }
+        // Job not in DB yet — only wait up to 30s before giving up
+        if(Date.now()-pollStart > 30000){
+          if(isGen){ abortPolling('Job not found. Please try again.', true); }
+          else      { abortPolling('Analysis timed out. Please try again.', true); }
+        }
       }
-    }catch(e){}
+    }catch(e){
+      failCount++;
+      if(failCount>=MAX_FAILS){ abortPolling('Network error after '+MAX_FAILS+' attempts. Check your connection.', false); }
+    }
   },POLL_INTERVAL_MS);
 }
 
@@ -2141,22 +2214,25 @@ async function runAnalyse(){
   try{ await startQueuePolling('analyse',submitAnalyseToN8n); }
   catch(err){
     await queueFinalize(); stopPolling(); hideQB();
-    toast('❌ Analysis failed: '+err.message,'err');
+    toast('❌ Analysis failed: '+(err?.message||String(err)||'Unknown error'),'err');
     document.getElementById('analyseBtn').disabled=false;
     document.getElementById('analysePanel').classList.remove('on');
   }
 }
 async function submitAnalyseToN8n(){
-  const useFile = (rembgMode==='remove'&&rembgBlobURL) ? await fetch(rembgBlobURL).then(r=>r.blob()) : file;
-  const imageBase64=await toBase64(useFile);
+  const rawFile = (rembgMode==='remove'&&rembgBlobURL) ? await fetch(rembgBlobURL).then(r=>r.blob()) : file;
+  // Compress before base64 — mobile cameras produce 10-20 MB photos that exceed fetch limits
+  const useFile    = await compressImage(rawFile, 1500, 0.82);
+  const imageBase64 = await toBase64(useFile);
+  const payloadKB  = Math.round(imageBase64.length * 0.75 / 1024);
+  console.log('Analyse payload:', payloadKB, 'KB (compressed from', Math.round(rawFile.size/1024), 'KB)');
   showQB('Submitting for analysis…',null,'');
-  // Get avatar description
   const avDesc = avatarId!=='dynamic' ? (AVATAR_DESCS[avatarId]||'') : '';
-  const res=await fetch(ANALYSE_SUBMIT,{
+  const res = await fetchWithTimeout(ANALYSE_SUBMIT, {
     method:'POST',
     headers:{'Content-Type':'application/json','X-User-Token':currentUser.access_token,'X-User-Email':currentUser.email},
     body:JSON.stringify({
-      imageBase64, imageName:file.name, imageMimeType:file.type||'image/jpeg',
+      imageBase64, imageName:file.name, imageMimeType:'image/jpeg',
       category:document.getElementById('category').value,
       subcategory:document.getElementById('subcategory').value||'',
       avatarId, avatarCountry, locationVariant,
@@ -2164,11 +2240,10 @@ async function submitAnalyseToN8n(){
       mode: currentMode,
       productName:document.getElementById('productName').value.trim(),
       features:document.getElementById('features').value.trim(),
-      userEmail:currentUser.email, email:currentUser.email,
-      driveFolderId:DRIVE_FOLDER
+      userEmail:currentUser.email, email:currentUser.email
     })
-  });
-  if(!res.ok) throw new Error('Submit failed — HTTP '+res.status);
+  }, 90000);
+  if(!res.ok) throw new Error('Server error ' + res.status + ' — please try again.');
   return await res.json();
 }
 
@@ -2197,7 +2272,7 @@ async function generate(){
   try{ await startQueuePolling('generate',()=>submitGenerateToN8n(sel),sel); }
   catch(err){
     await queueFinalize(); stopPolling(); hideQB(true);
-    toast('❌ Generation failed: '+err.message,'err');
+    toast('❌ Generation failed: '+(err?.message||String(err)||'Unknown error'),'err');
     document.getElementById('genBtn').disabled=false;
     document.getElementById('analyseBtn').disabled=false;
     const progWrapE=document.getElementById('progPanelWrap');
@@ -2207,22 +2282,25 @@ async function generate(){
   }
 }
 async function submitGenerateToN8n(sel){
-  const useFile=(rembgMode==='remove'&&rembgBlobURL)?await fetch(rembgBlobURL).then(r=>r.blob()):file;
-  const imageBase64=await toBase64(useFile);
-  const callouts=analysisData?.infographicCallouts||[];
+  const rawFile = (rembgMode==='remove'&&rembgBlobURL)?await fetch(rembgBlobURL).then(r=>r.blob()):file;
+  // Compress before base64 — mobile cameras produce 10-20 MB photos that exceed fetch limits
+  const useFile     = await compressImage(rawFile, 1500, 0.82);
+  const imageBase64 = await toBase64(useFile);
+  const payloadKB   = Math.round(imageBase64.length * 0.75 / 1024);
+  console.log('Generate payload:', payloadKB, 'KB (compressed from', Math.round(rawFile.size/1024), 'KB)');
+  const callouts = analysisData?.infographicCallouts||[];
   showQB('Submitting your job…',null,'',true);
-  const res=await fetch(QUEUE_SUBMIT,{
+  const res = await fetchWithTimeout(QUEUE_SUBMIT, {
     method:'POST',
     headers:{'Content-Type':'application/json','X-User-Token':currentUser.access_token,'X-User-Email':currentUser.email},
     body:JSON.stringify({
-      imageBase64, imageName:file.name, imageMimeType:file.type||'image/jpeg',
+      imageBase64, imageName:file.name, imageMimeType:'image/jpeg',
       category:document.getElementById('category').value,
       subcategory:document.getElementById('subcategory').value||'',
       avatarId, avatarCountry, locationVariant,
       productName:document.getElementById('productName').value.trim(),
       features:document.getElementById('features').value.trim(),
       userEmail:currentUser.email, email:currentUser.email,
-      driveFolderId:DRIVE_FOLDER,
       selectedPrompts:sel, selectedPromptsJson:JSON.stringify(sel),
       heroPrompt:getTA('hero'),
       infographicPrompt:getTA('infographic'),
@@ -2237,8 +2315,8 @@ async function submitGenerateToN8n(sel){
       sheetLocation:analysisData?.sheetLocation||'',
       sheetLighting:analysisData?.sheetLighting||'',
     })
-  });
-  if(!res.ok) throw new Error('Submit failed — HTTP '+res.status);
+  }, 90000);
+  if(!res.ok) throw new Error('Server error ' + res.status + ' — please try again.');
   return await res.json();
 }
 
