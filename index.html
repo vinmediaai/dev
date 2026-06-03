@@ -1125,6 +1125,10 @@ input#fileInput{display:none}
         <input type="checkbox" id="qtLS3" value="lifestyle3" onchange="validateQuick()">
         <span class="quick-type-lbl"><span class="qt-tick">✓</span> Lifestyle 3</span>
       </label>
+      <label class="quick-type-opt">
+        <input type="checkbox" id="qtInfo" value="infographic" onchange="validateQuick()">
+        <span class="quick-type-lbl"><span class="qt-tick">✓</span> Infographic</span>
+      </label>
     </div>
     <button class="btn-quick" id="quickBtn" onclick="runQuickGenerate()" disabled>⚡ Quick Generate</button>
   </div>
@@ -1746,9 +1750,8 @@ function applyAvatarFilter(cat, subcat) {
   const isProductOnly = f.gender === 'none';                  // category-level hide
 
   // ── Hide/show Avatar section ──
-  // Hide if: category is product-only (home_kitchen, home_decor, rideon)
-  // OR subcategory is in NO_LOC_SUBCATS (all jewellery, innerwear, etc.)
-  const hideAvatar = isProductOnly || isNoLoc;
+  // Only show in custom mode; always hidden in dynamic/quick
+  const hideAvatar = currentMode !== 'custom' || isProductOnly || isNoLoc;
   if (secAv) secAv.style.display = hideAvatar ? 'none' : '';
   if (hideAvatar) {
     window._avatarFilterCtx = { gender:'none', ageGroup:'none' };
@@ -2091,7 +2094,7 @@ function onSubcatChange(){
 
   // Location: hide if NO_LOC subcat OR product-only category
   if(secLoc){
-    const hideLoc = isNoLoc || productOnlyCats.has(cat);
+    const hideLoc = currentMode !== 'custom' || isNoLoc || productOnlyCats.has(cat);
     secLoc.style.display = hideLoc ? 'none' : '';
     if(hideLoc){
       document.querySelectorAll('.loc-card').forEach(c=>c.classList.remove('on'));
@@ -2104,7 +2107,6 @@ function onSubcatChange(){
   applyAvatarFilter(cat, sub);
 }
 
-function onSubcatChange(){ validate(); }
 
 // ══ AVATAR FILTER BY CATEGORY ══
 function updateAvatarsByCategory(cat){
@@ -2621,7 +2623,7 @@ function validateQuick(){
   const cat=document.getElementById('category').value;
   const name=document.getElementById('productName').value.trim();
   const baseOk = !!(file && cat && name);
-  const anyChecked = ['qtHero','qtLS1','qtLS2','qtLS3'].some(id=>{
+  const anyChecked = ['qtHero','qtLS1','qtLS2','qtLS3','qtInfo'].some(id=>{
     const el=document.getElementById(id); return el&&el.checked;
   });
   const qb = document.getElementById('quickBtn');
@@ -3337,12 +3339,13 @@ async function runQuickGenerate(){
 
   // Show analyse progress panel
   const QSTEPS = [
-    {id:'analyse', ico:'🔬', name:'AI analysing your product',    ms:14000},
-    {id:'prompts', ico:'✍️', name:'Building tailored prompts',    ms:3000},
-    {id:'hero',    ico:'🖼️', name:'Generating Hero image',        ms:22000},
-    {id:'ls1',     ico:'🌅', name:'Rendering Lifestyle 1',        ms:25000},
-    {id:'ls2',     ico:'🌅', name:'Rendering Lifestyle 2',        ms:25000},
-    {id:'ls3',     ico:'🌅', name:'Rendering Lifestyle 3',        ms:25000},
+    {id:'analyse',    ico:'🔬', name:'AI analysing your product',    ms:14000},
+    {id:'prompts',    ico:'✍️', name:'Building tailored prompts',    ms:3000},
+    {id:'hero',       ico:'🖼️', name:'Generating Hero image',        ms:22000},
+    {id:'ls1',        ico:'🌅', name:'Rendering Lifestyle 1',        ms:25000},
+    {id:'ls2',        ico:'🌅', name:'Rendering Lifestyle 2',        ms:25000},
+    {id:'ls3',        ico:'🌅', name:'Rendering Lifestyle 3',        ms:25000},
+    {id:'infographic',ico:'📊', name:'Generating Infographic',       ms:25000},
   ];
   showProgress('analysePanel','astepsList','apbarFill', QSTEPS.slice(0,2));
   runSteps('astepsList','apbarFill', QSTEPS.slice(0,2));
@@ -3357,6 +3360,7 @@ async function runQuickGenerate(){
     if(document.getElementById('qtLS1')?.checked)      sel.push('lifestyle');
     if(document.getElementById('qtLS2')?.checked)      sel.push('lifestyle2');
     if(document.getElementById('qtLS3')?.checked)      sel.push('lifestyle3');
+    if(document.getElementById('qtInfo')?.checked)     sel.push('infographic');
     if(!sel.length) sel.push('hero'); // fallback
 
     // Update button
@@ -3364,7 +3368,7 @@ async function runQuickGenerate(){
 
     // Build gen steps only for selected types
     const ALL_GSTEPS = QSTEPS.slice(2);
-    const stepMap = {hero:ALL_GSTEPS[0], lifestyle:ALL_GSTEPS[1], lifestyle2:ALL_GSTEPS[2], lifestyle3:ALL_GSTEPS[3]};
+    const stepMap = {hero:ALL_GSTEPS[0], lifestyle:ALL_GSTEPS[1], lifestyle2:ALL_GSTEPS[2], lifestyle3:ALL_GSTEPS[3], infographic:ALL_GSTEPS[4]};
     const genSteps = sel.map(s=>stepMap[s]).filter(Boolean);
     showProgress('progPanel','pstepsList','pbarFill', genSteps);
     runSteps('pstepsList','pbarFill', genSteps);
