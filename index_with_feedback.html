@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VinSnap — AI Product Photography</title>
+<link rel="icon" href="data:,">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6fa;--card:#fff;--card2:#f0f2f8;--border:#e2e5f0;
+  --accent:#6366f1;--accent2:#8b5cf6;--accent3:#06b6d4;
+  --text:#1a1d2e;--dim:#6b7280;--dim2:#4b5563;
+  --green:#059669;--red:#dc2626;
+  --r:16px;--rs:10px;--rx:7px;
+  --sh:0 4px 24px rgba(99,102,241,.10);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* header */
+.hdr{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.brand{font-weight:700;font-size:1.1rem;text-decoration:none;color:var(--text)}
+.brand span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hnav{display:flex;align-items:center;gap:10px}
+.back-btn{padding:6px 14px;border-radius:var(--rx);border:1.5px solid var(--border);background:#fff;color:var(--dim2);font-family:'Outfit',sans-serif;font-size:.84rem;font-weight:500;cursor:pointer;text-decoration:none;transition:.2s}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+.auth-btn{padding:7px 16px;border-radius:var(--rx);border:none;font-family:'Outfit',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;transition:.2s}
+.sign-in{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.sign-out{background:var(--card2);color:var(--dim2)}
+.ubadge{background:var(--card2);color:var(--dim2);font-size:.76rem;font-weight:600;padding:4px 10px;border-radius:20px}
+/* ── CREDIT SYSTEM ── */
+.credit-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #6ee7b7;color:#065f46;font-size:.76rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;transition:.2s}
+.credit-badge:hover{border-color:#059669}
+.credit-badge.low{background:linear-gradient(135deg,#fef3c7,#fde68a);border-color:#fbbf24;color:#92400e}
+.credit-badge.empty{background:linear-gradient(135deg,#fee2e2,#fecaca);border-color:#f87171;color:#991b1b}
+.credit-row{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:var(--rx);padding:10px 14px;margin-bottom:10px;font-size:.83rem}
+.credit-row .cr-lbl{color:var(--dim2);font-weight:500}
+.credit-row .cr-val{font-weight:700;color:var(--green)}
+.credit-row .cr-val.warn{color:#d97706}
+.credit-row .cr-val.danger{color:var(--red)}
+.upgrade-card{background:linear-gradient(135deg,#faf5ff,#ede9fe);border:2px solid #c4b5fd;border-radius:var(--r);padding:22px;margin-top:14px}
+.upgrade-title{font-size:1rem;font-weight:800;color:#5b21b6;margin-bottom:6px}
+.upgrade-sub{font-size:.85rem;color:#6d28d9;margin-bottom:14px;line-height:1.5}
+.upgrade-btns{display:flex;gap:10px;flex-wrap:wrap}
+.upgrade-wa{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--rx);background:#25d366;color:#fff;font-family:'Outfit',sans-serif;font-size:.87rem;font-weight:700;border:none;cursor:pointer;text-decoration:none}
+.upgrade-em{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--rx);background:var(--accent);color:#fff;font-family:'Outfit',sans-serif;font-size:.87rem;font-weight:700;border:none;cursor:pointer;text-decoration:none}
+.plans-toggle{background:none;border:none;color:var(--accent);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:12px;padding:0;display:block}
+.plans-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.8rem}
+.plans-table th{padding:8px 10px;background:rgba(99,102,241,.1);color:var(--dim2);font-weight:700;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+.plans-table td{padding:9px 10px;border-bottom:1px solid rgba(196,181,253,.3);vertical-align:middle}
+.plans-table tr:last-child td{border-bottom:none}
+.plans-table tr:hover td{background:rgba(99,102,241,.04)}
+.plan-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700}
+.plan-free{background:#e0f2fe;color:#0369a1}
+.plan-1{background:#dcfce7;color:#166534}
+.plan-2{background:#fef9c3;color:#854d0e}
+.plan-3{background:#ede9fe;color:#5b21b6}
+.plan-4{background:#fce7f3;color:#9d174d}
+
+/* page */
+.pg{max-width:860px;margin:0 auto;padding:28px 20px 80px}
+.ptitle{font-size:1.5rem;font-weight:800;margin-bottom:4px}
+.ptitle span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.psub{color:var(--dim);font-size:.9rem;margin-bottom:24px}
+
+/* card */
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);padding:22px;margin-bottom:16px;box-shadow:var(--sh)}
+.ctitle{font-size:.93rem;font-weight:700;margin-bottom:14px}
+
+/* count banner */
+.cbanner{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:var(--rs);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cbanner.hidden{display:none}
+.cnum{font-size:1.5rem;font-weight:800}
+.clbl{font-size:.82rem;opacity:.9}
+
+/* upload */
+.uzone{border:2px dashed var(--border);border-radius:var(--rs);padding:28px;text-align:center;cursor:pointer;transition:.2s;background:var(--card2);position:relative}
+.uzone:hover,.uzone.drag-over{border-color:var(--accent);background:#f0f0ff}
+.uzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uico{font-size:2rem;margin-bottom:8px}
+.utxt{font-weight:600;color:var(--dim2);font-size:.9rem}
+.uhint{font-size:.76rem;color:var(--dim);margin-top:4px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;margin-top:14px}
+.titem{position:relative;aspect-ratio:1;border-radius:var(--rx);overflow:hidden;border:2px solid var(--border)}
+.titem img{width:100%;height:100%;object-fit:cover}
+.tremove{position:absolute;top:4px;right:4px;background:rgba(220,38,38,.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.68rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tidx{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:4px}
+
+/* form */
+.lbl{font-size:.82rem;font-weight:600;color:var(--dim2);margin-bottom:5px;display:block}
+.sel,.inp{width:100%;padding:10px 14px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:'Outfit',sans-serif;font-size:.87rem;background:#fff;color:var(--text);transition:.2s;outline:none}
+.sel:focus,.inp:focus{border-color:var(--accent)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:540px){.frow{grid-template-columns:1fr}}
+.fg{margin-bottom:14px}
+
+/* type checkboxes */
+.tygrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.tygrid{grid-template-columns:1fr}}
+.tycb{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--rx);border:2px solid var(--border);cursor:pointer;transition:.2s;background:#fff;user-select:none}
+.tycb:hover{border-color:var(--accent)}
+.tycb.on{border-color:var(--accent);background:rgba(99,102,241,.06)}
+.tycb input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+.tycb-lbl{font-weight:600;font-size:.87rem}
+.tycb-sub{font-size:.72rem;color:var(--dim);margin-top:1px}
+
+/* mode */
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mcard{border:2px solid var(--border);border-radius:var(--rs);padding:14px 16px;cursor:pointer;transition:.2s;background:#fff}
+.mcard:hover{border-color:var(--accent)}
+.mcard.on{border-color:var(--accent);background:rgba(99,102,241,.06)}
+.mico{font-size:1.3rem;margin-bottom:4px}
+.mlbl{font-weight:700;font-size:.9rem;margin-bottom:3px}
+.msub{font-size:.75rem;color:var(--dim);line-height:1.4}
+
+/* custom panel */
+#customPanel{display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:4px}
+.sec-lbl{font-size:13px;font-weight:700;color:var(--dim2);padding:14px 20px 6px;letter-spacing:.02em}
+
+/* submit */
+.sbtn{width:100%;padding:15px;border-radius:var(--rs);border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.sbtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,.3)}
+.sbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+
+/* success */
+#successPanel{display:none}
+.scrd{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:2px solid #10b981;border-radius:var(--r);padding:32px;text-align:center}
+.sico{font-size:3rem;margin-bottom:12px}
+.stitle{font-size:1.4rem;font-weight:800;color:#065f46;margin-bottom:8px}
+.ssub{color:#047857;font-size:.92rem;line-height:1.7}
+.sjob{background:#fff;border-radius:var(--rx);padding:8px 14px;margin-top:14px;font-size:.76rem;color:var(--dim);font-family:monospace}
+.newbtn{margin-top:18px;padding:11px 26px;border-radius:var(--rx);border:2px solid var(--accent);background:#fff;color:var(--accent);font-family:'Outfit',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;transition:.2s}
+.newbtn:hover{background:var(--accent);color:#fff}
+
+/* modal */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center}
+.moverlay.open{display:flex}
+.mcrd{background:#fff;border-radius:var(--r);padding:32px;width:min(420px,94vw);position:relative;box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.mxbtn{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--dim)}
+.mtitle{font-size:1.1rem;font-weight:800;margin-bottom:18px}
+.minp{width:100%;padding:10px 14px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:'Outfit',sans-serif;font-size:.9rem;margin-bottom:10px;outline:none;transition:.2s}
+.minp:focus{border-color:var(--accent)}
+.mbtn{width:100%;padding:11px;border-radius:var(--rx);border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer}
+.mmsg{font-size:.82rem;margin-top:10px;min-height:18px}
+.mmsg.ok{color:var(--green)}
+.mmsg.err{color:var(--red)}
+.mswitch{font-size:.82rem;color:var(--dim);margin-top:14px;text-align:center}
+.mswitch a{color:var(--accent);cursor:pointer;font-weight:600}
+
+/* toast */
+.toast-el{position:fixed;bottom:24px;right:24px;background:#1a1d2e;color:#fff;padding:12px 20px;border-radius:var(--rx);font-size:.82rem;font-weight:600;z-index:9999;transform:translateY(100px);opacity:0;transition:.3s;max-width:300px}
+.toast-el.show{transform:translateY(0);opacity:1}
+
+
+/* ── STATUS TRACKER ── */
+.scrd{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:2px solid #10b981;border-radius:var(--r);padding:28px;text-align:center}
+.sico{font-size:2.5rem;margin-bottom:10px}
+.stitle{font-size:1.3rem;font-weight:800;color:#065f46;margin-bottom:6px}
+.ssub{color:#047857;font-size:.9rem;line-height:1.6}
+.sjob{background:#fff;border-radius:var(--rx);padding:6px 12px;margin-top:12px;font-size:.74rem;color:var(--dim);font-family:monospace;display:inline-block}
+.newbtn{margin-top:16px;padding:10px 22px;border-radius:var(--rx);border:2px solid var(--accent);background:#fff;color:var(--accent);font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s}
+.newbtn:hover{background:var(--accent);color:#fff}
+.status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.status-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:.83rem;font-weight:700;background:var(--card2);color:var(--dim2)}
+.status-chip.pending{background:#fef3c7;color:#92400e}
+.status-chip.running{background:#dbeafe;color:#1e40af}
+.status-chip.done{background:#d1fae5;color:#065f46}
+.status-chip.failed{background:#fee2e2;color:#991b1b}
+.prog-track{height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin-bottom:14px}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;width:0%;transition:width .5s ease}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+@media(max-width:480px){.detail-grid{grid-template-columns:1fr}}
+.detail-item{background:var(--card2);border-radius:var(--rx);padding:10px 12px}
+.detail-lbl{font-size:.72rem;color:var(--dim);display:block;margin-bottom:2px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.detail-val{font-size:.85rem;font-weight:700;color:var(--text);word-break:break-all}
+.img-link{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--card2);border-radius:var(--rx);font-size:.82rem;color:var(--text);transition:.2s;border:1.5px solid transparent}
+.img-link:hover{border-color:var(--accent);background:#f0f0ff}
+.img-link-label{font-weight:600}
+.img-link-sub{font-size:.72rem;color:var(--dim);margin-top:1px}
+.dl-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:var(--rx);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.76rem;font-weight:700;border:none;cursor:pointer;flex-shrink:0;transition:.2s}
+.dl-btn:hover{opacity:.85}
+.dl-all-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--rx);background:linear-gradient(135deg,var(--green),#047857);color:#fff;font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:700;border:none;cursor:pointer;transition:.2s}
+.dl-all-btn:hover{opacity:.85}
+/* job history */
+.jhist-wrap{margin-top:4px}
+.jhist-title{font-size:.82rem;font-weight:700;color:var(--dim2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.jhist-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.jhist-table th{text-align:left;padding:7px 10px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.jhist-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.jhist-table tr:last-child td{border-bottom:none}
+.jhist-table tr:hover td{background:var(--card2)}
+.jhist-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:700}
+.jhist-chip.pending{background:#fef3c7;color:#92400e}
+.jhist-chip.running{background:#dbeafe;color:#1e40af}
+.jhist-chip.completed,.jhist-chip.done{background:#d1fae5;color:#065f46}
+.jhist-chip.failed{background:#fee2e2;color:#991b1b}
+.jhist-jid{font-family:monospace;font-size:.68rem;color:var(--dim)}
+.jhist-dl{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:var(--rx);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.7rem;font-weight:700;border:none;cursor:pointer}
+.jhist-dl:disabled{opacity:.35;cursor:not-allowed}
+/* ── FEEDBACK MODAL ── */
+.fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(5px);z-index:2000;display:none;align-items:center;justify-content:center}
+.fb-overlay.open{display:flex}
+.fb-card{background:#fff;border-radius:20px;padding:32px 28px;width:min(460px,94vw);position:relative;box-shadow:0 24px 60px rgba(0,0,0,.2);animation:fbIn .3s ease}
+@keyframes fbIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fb-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--dim);line-height:1}
+.fb-header{text-align:center;margin-bottom:22px}
+.fb-ico{font-size:2.4rem;margin-bottom:8px}
+.fb-title{font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:4px}
+.fb-sub{font-size:.84rem;color:var(--dim);line-height:1.5}
+.fb-section{margin-bottom:18px}
+.fb-lbl{font-size:.8rem;font-weight:700;color:var(--dim2);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:.04em}
+.fb-stars{display:flex;gap:8px;justify-content:center;margin-bottom:4px}
+.fb-star{font-size:2rem;cursor:pointer;transition:.15s;opacity:.3;line-height:1;user-select:none}
+.fb-star.on{opacity:1;transform:scale(1.12)}
+.fb-star-lbl{text-align:center;font-size:.78rem;color:var(--dim);height:18px;margin-top:2px}
+.fb-textarea{width:100%;padding:11px 14px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:'Outfit',sans-serif;font-size:.87rem;color:var(--text);resize:vertical;min-height:90px;outline:none;transition:.2s;background:#fafbff}
+.fb-textarea:focus{border-color:var(--accent);background:#fff}
+.fb-textarea::placeholder{color:#aab0c4}
+.fb-submit{width:100%;padding:13px;border-radius:var(--rx);border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
+.fb-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.3)}
+.fb-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.fb-skip{display:block;text-align:center;margin-top:12px;font-size:.8rem;color:var(--dim);cursor:pointer;background:none;border:none;font-family:'Outfit',sans-serif;width:100%;padding:4px}
+.fb-skip:hover{color:var(--accent);text-decoration:underline}
+.fb-thanks{text-align:center;padding:20px 0 10px;display:none}
+.fb-thanks-ico{font-size:2.5rem;margin-bottom:10px}
+.fb-thanks-title{font-size:1.1rem;font-weight:800;color:var(--green);margin-bottom:6px}
+.fb-thanks-sub{font-size:.84rem;color:var(--dim)}
+
+/* image slider */
+.slider-section{background:linear-gradient(135deg,#0f0f1a,#1a1030);padding:48px 0 56px;margin:0}
+.slider-inner{max-width:860px;margin:0 auto;padding:0 20px}
+.slider-hdr{text-align:center;margin-bottom:28px}
+.slider-tag{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:.72rem;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.slider-title{font-size:1.5rem;font-weight:800;color:#fff;line-height:1.3}
+.slider-title span{background:linear-gradient(135deg,#a78bfa,#67e8f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.slider-sub{font-size:.85rem;color:rgba(255,255,255,.55);margin-top:8px}
+.slider-track-wrap{position:relative;overflow:hidden;border-radius:16px}
+.slider-track{display:flex;transition:transform .6s cubic-bezier(.4,0,.2,1)}
+.slider-slide{min-width:100%;height:460px;position:relative;overflow:hidden;border-radius:16px;background:#1a1030}
+.slider-slide img{width:100%;height:100%;object-fit:cover;display:block;border-radius:16px}
+@media(max-width:600px){
+  .slider-slide{height:auto;aspect-ratio:3/4;max-height:75vw}
+  .slider-slide img{object-fit:contain}
+}
+.slider-slide .slide-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:rgba(255,255,255,.25);font-size:.82rem}
+.slider-slide .slide-placeholder span{font-size:2.5rem}
+.slider-dots{display:flex;justify-content:center;gap:8px;margin-top:16px}
+.slider-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);border:none;cursor:pointer;transition:.3s;padding:0}
+.slider-dot.on{background:#a78bfa;width:22px;border-radius:4px}
+.slider-arrows{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;pointer-events:none}
+.slider-arrow{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:all;transition:.2s;backdrop-filter:blur(4px)}
+.slider-arrow:hover{background:rgba(99,102,241,.7)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.5s ease infinite}
+.pulse-dot.done{background:var(--green);animation:none}
+.pulse-dot.failed{background:var(--red);animation:none}
+
+/* avatar + location CSS from index_6 */
+.av-country-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:14px 20px 10px}
+.av-country-tab{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border);cursor:pointer;transition:.2s;background:var(--card2)}
+.av-country-tab:hover{border-color:var(--accent)}
+.av-country-tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.avatar-grid-wrap{display:none;padding:0 20px 16px}
+.avatar-grid-wrap.on{display:block}
+.av-dyn-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid var(--accent);border-radius:var(--radius-sm);background:rgba(99,102,241,.07);cursor:pointer;margin-bottom:10px;transition:.2s}
+.av-dyn-card:not(.on){border-color:var(--border);background:transparent}
+.av-dyn-card:not(.on):hover{border-color:var(--accent2)}
+.av-dyn-ico{font-size:22px;flex-shrink:0}
+.av-dyn-text{flex:1}
+.av-dyn-title{font-size:13px;font-weight:600}
+.av-dyn-sub{font-size:11px;color:var(--dim)}
+.av-dyn-check{width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;opacity:0;transition:.2s}
+.av-dyn-card.on .av-dyn-check{opacity:1}
+.avatar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:340px;overflow-y:auto;padding-right:4px}
+.avatar-grid::-webkit-scrollbar{width:4px}
+.avatar-grid::-webkit-scrollbar-track{background:transparent}
+.avatar-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.avatar-grid::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+.av-card{border:2px solid var(--border);border-radius:var(--radius-sm);padding:10px 8px;text-align:center;cursor:pointer;transition:.2s;opacity:1}
+.av-card:hover:not(.disabled){border-color:var(--accent2)}
+.av-card.on{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.av-card.disabled{opacity:.35;pointer-events:none;filter:grayscale(1)}
+.av-thumb{width:44px;height:44px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:20px;border:2px solid var(--border)}
+.av-card.on .av-thumb{border-color:var(--accent)}
+.av-name{font-size:12px;font-weight:500}
+.av-gender{font-size:10px;color:var(--dim);margin-top:2px}
+.av-cat-note{font-size:11px;color:var(--accent2);padding:8px 20px;display:none;align-items:center;gap:6px}
+.av-cat-note.on{display:flex}
+
+/* ── UPLOAD TIPS ── */
+.upload-tips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media(max-width:520px){.upload-tips{grid-template-columns:1fr}}
+.tips-col{border-radius:var(--rx);padding:12px 14px;font-size:.78rem;line-height:1.55}
+.tips-do{background:#f0fdf4;border:1px solid #bbf7d0}
+.tips-dont{background:#fff7f7;border:1px solid #fecaca}
+.tips-head{font-weight:700;font-size:.82rem;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.tips-do .tips-head{color:#166534}
+.tips-dont .tips-head{color:#991b1b}
+.tips-col ul{padding-left:16px;margin:0}
+.tips-col ul li{margin-bottom:4px;color:#374151}
+.tips-col ul li:last-child{margin-bottom:0}
+
+/* ── LOCATION GRID ── */
+.loc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 20px 16px}
+.loc-card{border:1.5px solid var(--border);border-radius:var(--rx);padding:10px 8px;text-align:center;cursor:pointer;transition:.2s;font-size:12px;background:#fff;color:var(--text)}
+.loc-card:hover{border-color:var(--accent);background:rgba(99,102,241,.05)}
+.loc-card.on{border-color:var(--accent);background:rgba(99,102,241,.10);font-weight:700;color:var(--accent)}
+.loc-card-ico{font-size:18px;margin-bottom:4px}
+.loc-card-name{font-size:11px;font-weight:500}
+.loc-card.recommended,.loc-card.fashion-loc{border-color:var(--border);background:#fff}
+.loc-card.recommended:hover,.loc-card.fashion-loc:hover{border-color:var(--accent);background:rgba(99,102,241,.05)}
+.loc-card.recommended.on,.loc-card.fashion-loc.on{border-color:var(--accent);background:rgba(99,102,241,.10);color:var(--accent)}
+.loc-card.fashion-loc .loc-card-name::after{content:''}
+
+/* ── SELECTION SUMMARY BAR ── */
+.sel-summary{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1.5px solid #c4b5fd;border-radius:var(--rs);padding:14px 16px;margin-bottom:14px;display:none}
+.sel-summary.visible{display:block}
+.sel-summary-title{font-size:.72rem;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.sel-chips{display:flex;flex-wrap:wrap;gap:7px}
+.sel-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:.76rem;font-weight:600;background:#fff;border:1.5px solid #ddd6fe;color:#4c1d95}
+.sel-chip .chip-lbl{font-size:.65rem;color:#7c3aed;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-right:1px}
+.sel-chip.empty{background:#f3f4f6;border-color:#e5e7eb;color:#9ca3af}
+.sel-chip.empty .chip-lbl{color:#9ca3af}
+
+/* ── ANALYSE BUTTON ── */
+
+.tab-bar{display:flex;border-bottom:2px solid var(--border);background:#fff;position:sticky;top:60px;z-index:99;padding:0 24px}
+.tab-btn{padding:14px 20px;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:600;color:var(--dim);background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:.2s;white-space:nowrap}
+.tab-btn:hover{color:var(--accent)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-page{display:none}.tab-page.active{display:block}
+.j-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.j-rbtn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rx);border:1.5px solid var(--border);background:#fff;color:var(--dim2);font-family:'Outfit',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;transition:.2s}
+.j-rbtn:hover{border-color:var(--accent);color:var(--accent)}
+.jcard{background:var(--card);border-radius:var(--r);border:1px solid var(--border);padding:20px;margin-bottom:14px;box-shadow:var(--sh)}
+.jcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.jcard-info{flex:1;min-width:0}
+.jcard-name{font-size:1rem;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jcard-meta{font-size:.75rem;color:var(--dim);display:flex;gap:10px;flex-wrap:wrap}
+.jcard-id{font-size:.7rem;color:var(--dim);font-family:monospace;margin-top:3px;opacity:.7}
+.jchip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:700;flex-shrink:0}
+.jchip-pending{background:#fef3c7;color:#92400e}
+.jchip-running{background:#dbeafe;color:#1e40af}
+.jchip-completed,.jchip-completed_with_errors{background:#d1fae5;color:#065f46}
+.jchip-failed{background:#fee2e2;color:#991b1b}
+@keyframes jblink{0%,100%{opacity:1}50%{opacity:.3}}
+.jchip .jdot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:jblink 1.4s ease infinite;flex-shrink:0}
+.jprog{height:5px;background:var(--card2);border-radius:3px;margin-bottom:12px;overflow:hidden}
+.jprog-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s ease}
+.jdetails{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.jditem{background:var(--card2);border-radius:var(--rx);padding:8px 11px}
+.jdlbl{font-size:.67rem;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px}
+.jdval{font-size:.83rem;font-weight:700}
+.jimgs{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
+.jimgs-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.jimgs-title{font-size:.82rem;font-weight:700;color:var(--green)}
+.j-dlall{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--rx);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:700;border:none;cursor:pointer;transition:.2s}
+.j-dlall:hover{opacity:.85}
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.jtile{border:1.5px solid var(--border);border-radius:var(--rs);overflow:hidden;transition:.2s;background:var(--card2)}
+.jtile:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(99,102,241,.15)}
+.jtile-img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.jtile-ph{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2rem;background:var(--card2);display:none}
+.jtile-foot{padding:7px 9px;display:flex;align-items:center;justify-content:space-between}
+.jtile-lbl{font-size:.7rem;font-weight:600;color:var(--dim2)}
+.j-save{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.7rem;font-weight:700;text-decoration:none}
+.j-save:hover{opacity:.85}
+.j-toggle{background:none;border:none;color:var(--accent);font-family:'Outfit',sans-serif;font-size:.79rem;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:3px}
+.j-toggle:hover{text-decoration:underline}
+.j-empty{text-align:center;padding:60px 20px;color:var(--dim)}
+@keyframes jspin{to{transform:rotate(360deg)}}
+.j-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:jspin .7s linear infinite;margin:0 auto 12px}
+
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <a class="brand" href="index_6.html"><span>VinSnap</span></a>
+  <div class="hnav">
+    <span class="ubadge" id="ubadge">Sign in to use</span>
+    <button class="credit-badge" id="creditBadge" onclick="openUpgradeModal()" style="display:none" title="Your credits">💎 <span id="creditCount">—</span></button>
+    <button class="auth-btn sign-in" id="authBtn" onclick="openModal()">Sign In</button>
+  </div>
+</header>
+
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-batch" onclick="switchTab('batch')">✨ Generate Photos</button>
+  <button class="tab-btn" id="tab-jobs" onclick="switchTab('jobs')">📋 My Jobs</button>
+  <button class="tab-btn" id="tab-newjob" onclick="startNewJob()" style="display:none;margin-left:auto;color:var(--accent);border-bottom-color:transparent">＋ New Job</button>
+</div>
+<div id="page-batch" class="tab-page active">
+
+<!-- ── AI PRODUCT PHOTOGRAPHY SHOWCASE SLIDER ── -->
+<div class="slider-section">
+  <div class="slider-inner">
+    <div class="slider-hdr">
+      <div class="slider-tag">✨ AI Product Photography Generator</div>
+      <div class="slider-title">Studio-quality photos.<br><span>Generated in minutes.</span></div>
+      <div class="slider-sub">Upload your product · We handle the rest · Professional results delivered to your inbox</div>
+    </div>
+    <div class="slider-track-wrap">
+      <div class="slider-track" id="sliderTrack">
+        <!-- Slide 1 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_01.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 2 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_02.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 3 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_03.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 4 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_04.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 5 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_05.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 6 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_06.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 7 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_07.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 8 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_08.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 9 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_09.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+        <!-- Slide 10 -->
+        <div class="slider-slide">
+          <img src="https://storage.googleapis.com/vinsnap-batch-us/batch-inputs/showcase/slide_10.jpg" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="AI Product Photo">
+          <div class="slide-placeholder" style="display:none"><span>🖼️</span>Your product photo here</div>
+        </div>
+      </div>
+      <div class="slider-arrows">
+        <button class="slider-arrow" onclick="sliderMove(-1)">‹</button>
+        <button class="slider-arrow" onclick="sliderMove(1)">›</button>
+      </div>
+    </div>
+    <div class="slider-dots" id="sliderDots"></div>
+  </div>
+</div>
+<main class="pg" id="mainForm">
+  <div class="ptitle">✨ <span>AI Product Photography</span></div>
+  <div class="psub">Upload up to 10 product images — professionally generated lifestyle photos will be emailed to you in ~30 minutes.</div>
+
+  <div class="cbanner hidden" id="countBanner">
+    <div><div class="cnum" id="countNum">0</div><div class="clbl">images will be generated</div></div>
+    <div style="text-align:right;font-size:.82rem;opacity:.85" id="countBreak"></div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="card">
+    <div class="ctitle">📁 Upload Product Images</div>
+    <div class="uzone" id="uzone"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="onDrop(event)">
+      <input type="file" id="fileInput" accept="image/*" multiple onchange="onFilePick(event)">
+      <div class="uico">🖼️</div>
+      <div class="utxt">Drag & drop or click to browse</div>
+      <div class="uhint">Up to 10 images · JPG PNG WebP · Max 10MB each</div>
+    </div>
+    <div class="tgrid" id="thumbGrid"></div>
+
+    <!-- DO / DON'T TIPS -->
+    <div class="upload-tips">
+      <div class="tips-col tips-do">
+        <div class="tips-head"><span>✅</span> Do's</div>
+        <ul>
+          <li>Use a plain, solid-color or white background for best output quality</li>
+          <li>Ensure your product is well-lit and clearly visible</li>
+          <li>Upload sharp, high-resolution images (min 800×800px)</li>
+          <li>One product per image — isolated cleanly</li>
+          <li>If uploading multiple images, make sure all match the selected category &amp; subcategory</li>
+          <li>Capture the product from multiple angles for variety</li>
+        </ul>
+      </div>
+      <div class="tips-col tips-dont">
+        <div class="tips-head"><span>❌</span> Don'ts</div>
+        <ul>
+          <li>Don't mix multiple different products in a single image</li>
+          <li>Avoid blurry or low-resolution photos</li>
+          <li>Don't use heavily patterned or busy backgrounds</li>
+          <li>Avoid extreme shadows, harsh flash glare, or overexposure</li>
+          <li>Don't upload images with watermarks or text overlays</li>
+          <li>Avoid screenshots or images with visible device frames</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT DETAILS -->
+  <div class="card">
+    <div class="ctitle">🏷️ Product Details</div>
+    <div class="fg">
+      <label class="lbl">Product Name</label>
+      <input class="inp" id="productName" type="text" placeholder="e.g. Banarasi Silk Saree Collection" oninput="checkReady()">
+    </div>
+    <div class="frow">
+      <div class="fg" style="margin:0">
+        <label class="lbl">Category</label>
+        <select class="sel" id="catSel" onchange="onCatChange()">
+          <option value="">Select category…</option>
+          <option value="womens_fashion">👗 Women's Fashion</option>
+          <option value="mens_fashion">👔 Men's Fashion</option>
+          <option value="kids_fashion">👶 Kids' Fashion</option>
+          <option value="footwear">👠 Footwear</option>
+          <option value="jewellery">💍 Jewellery</option>
+          <option value="accessories">👜 Accessories</option>
+          <option value="home_kitchen">🍳 Home & Kitchen</option>
+          <option value="home_decor">🏠 Home Décor</option>
+          <option value="beauty">💄 Beauty</option>
+          <option value="electronics">📱 Electronics</option>
+          <option value="health">🏥 Health</option>
+          <option value="toys">🧸 Toys</option>
+          <option value="stationery">✏️ Stationery</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="lbl">Subcategory</label>
+        <select class="sel" id="subSel" onchange="checkReady()">
+          <option value="">Select subcategory…</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE TYPES -->
+  <div class="card">
+    <div class="ctitle">🖼️ Select Image Types</div>
+    <div class="tygrid">
+      <label class="tycb on"><input type="checkbox" value="hero" checked onchange="onTypeTick(this)"><div><div class="tycb-lbl">🎯 Hero</div><div class="tycb-sub">Clean product shot</div></div></label>
+      <label class="tycb on"><input type="checkbox" value="lifestyle1" checked onchange="onTypeTick(this)"><div><div class="tycb-lbl">✨ Lifestyle 1</div><div class="tycb-sub">Front / primary pose</div></div></label>
+      <label class="tycb on"><input type="checkbox" value="lifestyle2" checked onchange="onTypeTick(this)"><div><div class="tycb-lbl">🌿 Lifestyle 2</div><div class="tycb-sub">Side / alternate angle</div></div></label>
+      <label class="tycb on"><input type="checkbox" value="lifestyle3" checked onchange="onTypeTick(this)"><div><div class="tycb-lbl">🔍 Lifestyle 3</div><div class="tycb-sub">Close-up / detail</div></div></label>
+    </div>
+  </div>
+
+  <!-- MODE -->
+  <div class="card">
+    <div class="ctitle">⚙️ Generation Mode</div>
+    <div class="mrow">
+      <div class="mcard on" id="modeDyn" onclick="setMode('dynamic')">
+        <div class="mico">⚡</div><div class="mlbl">Dynamic</div>
+        <div class="msub">AI auto-selects avatar & location from your category</div>
+      </div>
+      <div class="mcard" id="modeCus" onclick="setMode('custom')">
+        <div class="mico">🎨</div><div class="mlbl">Custom</div>
+        <div class="msub">Pick avatar & location — applied across all images</div>
+      </div>
+    </div>
+    <div id="customPanel">
+      <div class="sec-lbl">🧑 Model Avatar</div>
+<div class="av-country-tabs" id="avCountryTabs">
+    <div class="av-country-tab on" data-country="india" onclick="selectCountry(this)">🇮🇳 India</div>
+    <div class="av-country-tab" data-country="american" onclick="selectCountry(this)">🇺🇸 USA</div>
+    <div class="av-country-tab" data-country="chinese" onclick="selectCountry(this)">🇨🇳 China</div>
+    <div class="av-country-tab" data-country="japanese" onclick="selectCountry(this)">🇯🇵 Japan</div>
+    <div class="av-country-tab" data-country="korean" onclick="selectCountry(this)">🇰🇷 Korea</div>
+    <div class="av-country-tab" data-country="european" onclick="selectCountry(this)">🇪🇺 Europe</div>
+    <div class="av-country-tab" data-country="arabic" onclick="selectCountry(this)">🇦🇪 Arabic</div>
+    <div class="av-country-tab" data-country="australian" onclick="selectCountry(this)">🇦🇺 Australia</div>
+    <div class="av-country-tab" data-country="brazilian" onclick="selectCountry(this)">🇧🇷 Brazil</div>
+    <div class="av-country-tab" data-country="african" onclick="selectCountry(this)">🌍 Africa</div>
+    <div class="av-country-tab" data-country="global" onclick="selectCountry(this)">🌐 Global</div>
+  </div>
+
+  <!-- INDIA -->
+  <div id="avGrid-india" class="avatar-grid-wrap on">
+    <div class="av-dyn-card on" id="avDyn-india" data-avatar="dynamic" data-country="india" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span>
+      <div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Indian</div><div class="av-dyn-sub">AI generates a natural Indian face each run</div></div>
+      <div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <!-- ── Existing avatars ── -->
+      <div class="av-card" data-avatar="avatar_rakesh" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Rakesh</div><div class="av-gender">Male · 30s</div></div>
+      <div class="av-card" data-avatar="avatar_raj" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Raj</div><div class="av-gender">Male · 34</div></div>
+      <div class="av-card" data-avatar="avatar_arjun" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Arjun</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="avatar_rena" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Rena</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="avatar_priya" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Priya</div><div class="av-gender">Female · 30</div></div>
+      <div class="av-card" data-avatar="avatar_1" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Men (India)</div><div class="av-gender">Male · 30s</div></div>
+      <div class="av-card" data-avatar="avatar_2" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Women (India)</div><div class="av-gender">Female · late 20s</div></div>
+      <div class="av-card" data-avatar="avatar_3" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Boy (India)</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="avatar_4" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Girl (India)</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="avatar_5" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy (India)</div><div class="av-gender">Male · 8-12 mo</div></div>
+      <div class="av-card" data-avatar="avatar_6" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl (India)</div><div class="av-gender">Female · 8-12 mo</div></div>
+      <div class="av-card" data-avatar="avatar_7" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Old Man (India)</div><div class="av-gender">Male · 65-70 yrs</div></div>
+      <div class="av-card" data-avatar="avatar_8" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Old Woman (India)</div><div class="av-gender">Female · 65-70 yrs</div></div>
+      <!-- ── New female adults (30) ── -->
+      <div class="av-card" data-avatar="in_f_01" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Meera</div><div class="av-gender">Female · 22</div></div>
+      <div class="av-card" data-avatar="in_f_02" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Priya</div><div class="av-gender">Female · 24</div></div>
+      <div class="av-card" data-avatar="in_f_03" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Ananya</div><div class="av-gender">Female · 21</div></div>
+      <div class="av-card" data-avatar="in_f_04" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Riya</div><div class="av-gender">Female · 23</div></div>
+      <div class="av-card" data-avatar="in_f_05" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Ishika</div><div class="av-gender">Female · 25</div></div>
+      <div class="av-card" data-avatar="in_f_06" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Kavya</div><div class="av-gender">Female · 20</div></div>
+      <div class="av-card" data-avatar="in_f_07" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Sonali</div><div class="av-gender">Female · 26</div></div>
+      <div class="av-card" data-avatar="in_f_08" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Priyanka</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="in_f_09" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Divya</div><div class="av-gender">Female · 22</div></div>
+      <div class="av-card" data-avatar="in_f_10" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Aishwarya</div><div class="av-gender">Female · 24</div></div>
+      <div class="av-card" data-avatar="in_f_11" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Harini</div><div class="av-gender">Female · 21</div></div>
+      <div class="av-card" data-avatar="in_f_12" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Shreya</div><div class="av-gender">Female · 23</div></div>
+      <div class="av-card" data-avatar="in_f_13" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Nandini</div><div class="av-gender">Female · 25</div></div>
+      <div class="av-card" data-avatar="in_f_14" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Pooja</div><div class="av-gender">Female · 28</div></div>
+      <div class="av-card" data-avatar="in_f_15" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Tanvi</div><div class="av-gender">Female · 20</div></div>
+      <div class="av-card" data-avatar="in_f_16" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Simran</div><div class="av-gender">Female · 22</div></div>
+      <div class="av-card" data-avatar="in_f_17" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Lakshmi</div><div class="av-gender">Female · 26</div></div>
+      <div class="av-card" data-avatar="in_f_18" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Aarushi</div><div class="av-gender">Female · 21</div></div>
+      <div class="av-card" data-avatar="in_f_19" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Trisha</div><div class="av-gender">Female · 24</div></div>
+      <div class="av-card" data-avatar="in_f_20" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Roshni</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="in_f_21" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Swathi</div><div class="av-gender">Female · 23</div></div>
+      <div class="av-card" data-avatar="in_f_22" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Nisha</div><div class="av-gender">Female · 25</div></div>
+      <div class="av-card" data-avatar="in_f_23" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Chandni</div><div class="av-gender">Female · 20</div></div>
+      <div class="av-card" data-avatar="in_f_24" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Deepa</div><div class="av-gender">Female · 28</div></div>
+      <div class="av-card" data-avatar="in_f_25" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Zara</div><div class="av-gender">Female · 22</div></div>
+      <div class="av-card" data-avatar="in_f_26" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Bhavna</div><div class="av-gender">Female · 26</div></div>
+      <div class="av-card" data-avatar="in_f_27" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Aditi</div><div class="av-gender">Female · 23</div></div>
+      <div class="av-card" data-avatar="in_f_28" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Parvati</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="in_f_29" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Ritika</div><div class="av-gender">Female · 24</div></div>
+      <div class="av-card" data-avatar="in_f_30" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Geeta</div><div class="av-gender">Female · 21</div></div>
+      <!-- ── South Indian featured females (8) ── -->
+      <div class="av-card" data-avatar="si_f_01" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Meenakshi</div><div class="av-gender">Female · 24 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_02" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Kavitha</div><div class="av-gender">Female · 22 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_03" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Nithila</div><div class="av-gender">Female · 25 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_04" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Saranya</div><div class="av-gender">Female · 26 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_05" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Priyadarshini</div><div class="av-gender">Female · 23 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_06" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Varalakshmi</div><div class="av-gender">Female · 27 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_07" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Keerthana</div><div class="av-gender">Female · 21 · South Indian</div></div>
+      <div class="av-card" data-avatar="si_f_08" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Dharshini</div><div class="av-gender">Female · 28 · South Indian</div></div>
+      <!-- ── New male adults (10) ── -->
+      <div class="av-card" data-avatar="in_m_01" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Arjun</div><div class="av-gender">Male · 24</div></div>
+      <div class="av-card" data-avatar="in_m_02" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Rohit</div><div class="av-gender">Male · 26</div></div>
+      <div class="av-card" data-avatar="in_m_03" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Karan</div><div class="av-gender">Male · 22</div></div>
+      <div class="av-card" data-avatar="in_m_04" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Vishnu</div><div class="av-gender">Male · 25</div></div>
+      <div class="av-card" data-avatar="in_m_05" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Siddharth</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="in_m_06" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Raj</div><div class="av-gender">Male · 23</div></div>
+      <div class="av-card" data-avatar="in_m_07" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Dev</div><div class="av-gender">Male · 21</div></div>
+      <div class="av-card" data-avatar="in_m_08" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Aakash</div><div class="av-gender">Male · 27</div></div>
+      <div class="av-card" data-avatar="in_m_09" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Nikhil</div><div class="av-gender">Male · 20</div></div>
+      <div class="av-card" data-avatar="in_m_10" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Akshay</div><div class="av-gender">Male · 26</div></div>
+      <!-- ── New boys (5) ── -->
+      <div class="av-card" data-avatar="in_boy_01" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Vivaan</div><div class="av-gender">Male · 8 yrs</div></div>
+      <div class="av-card" data-avatar="in_boy_02" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Aarav</div><div class="av-gender">Male · 10 yrs</div></div>
+      <div class="av-card" data-avatar="in_boy_03" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Rohan</div><div class="av-gender">Male · 12 yrs</div></div>
+      <div class="av-card" data-avatar="in_boy_04" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Kabir</div><div class="av-gender">Male · 7 yrs</div></div>
+      <div class="av-card" data-avatar="in_boy_05" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧒</span></div><div class="av-name">Aryan</div><div class="av-gender">Male · 9 yrs</div></div>
+      <!-- ── New girls (5) ── -->
+      <div class="av-card" data-avatar="in_girl_01" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Anvi</div><div class="av-gender">Female · 8 yrs</div></div>
+      <div class="av-card" data-avatar="in_girl_02" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Saanvi</div><div class="av-gender">Female · 10 yrs</div></div>
+      <div class="av-card" data-avatar="in_girl_03" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Myra</div><div class="av-gender">Female · 12 yrs</div></div>
+      <div class="av-card" data-avatar="in_girl_04" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Anika</div><div class="av-gender">Female · 6 yrs</div></div>
+      <div class="av-card" data-avatar="in_girl_05" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Ira</div><div class="av-gender">Female · 9 yrs</div></div>
+      <!-- ── New baby boys (5) ── -->
+      <div class="av-card" data-avatar="in_babyboy_01" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Arjun</div><div class="av-gender">Male · 0-1 mo</div></div>
+      <div class="av-card" data-avatar="in_babyboy_02" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Aryan</div><div class="av-gender">Male · 1 yr</div></div>
+      <div class="av-card" data-avatar="in_babyboy_03" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Rohan</div><div class="av-gender">Male · 0-1 mo</div></div>
+      <div class="av-card" data-avatar="in_babyboy_04" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Dev</div><div class="av-gender">Male · 1 yr</div></div>
+      <div class="av-card" data-avatar="in_babyboy_05" data-country="india" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Raj</div><div class="av-gender">Male · 0-1 mo</div></div>
+      <!-- ── New baby girls (5) ── -->
+      <div class="av-card" data-avatar="in_babygirl_01" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Priya</div><div class="av-gender">Female · 0-1 mo</div></div>
+      <div class="av-card" data-avatar="in_babygirl_02" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Riya</div><div class="av-gender">Female · 1 yr</div></div>
+      <div class="av-card" data-avatar="in_babygirl_03" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Meera</div><div class="av-gender">Female · 0-1 mo</div></div>
+      <div class="av-card" data-avatar="in_babygirl_04" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Ananya</div><div class="av-gender">Female · 1 yr</div></div>
+      <div class="av-card" data-avatar="in_babygirl_05" data-country="india" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Sonali</div><div class="av-gender">Female · 0-1 mo</div></div>
+    </div>
+  </div>
+
+  <!-- USA -->
+  <div id="avGrid-american" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-american" data-avatar="dynamic" data-country="american" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span>
+      <div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — American</div><div class="av-dyn-sub">AI generates a natural American face each run</div></div>
+      <div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_james" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">James</div><div class="av-gender">Male · 32</div></div>
+      <div class="av-card" data-avatar="avatar_michael" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Michael</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="avatar_tyler" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Tyler</div><div class="av-gender">Male · 35</div></div>
+      <div class="av-card" data-avatar="avatar_emma" data-country="american" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Emma</div><div class="av-gender">Female · 26</div></div>
+      <div class="av-card" data-avatar="avatar_sophia" data-country="american" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Sophia</div><div class="av-gender">Female · 30</div></div>
+
+      <div class="av-card" data-avatar="av_am_3" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 8-10 yrs</div></div>
+      <div class="av-card" data-avatar="av_am_4" data-country="american" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 8-10 yrs</div></div>
+      <div class="av-card" data-avatar="av_am_baby_boy" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_am_baby_girl" data-country="american" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_am_old_man" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_am_old_woman" data-country="american" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_am_1" data-country="american" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">American Man</div><div class="av-gender">Male · early 30s</div></div>
+      <div class="av-card" data-avatar="av_am_2" data-country="american" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">American Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- CHINA -->
+  <div id="avGrid-chinese" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-chinese" data-avatar="dynamic" data-country="chinese" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Chinese</div><div class="av-dyn-sub">AI generates a natural Chinese face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_wei" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Wei</div><div class="av-gender">Male · 30</div></div>
+      <div class="av-card" data-avatar="avatar_liang" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Liang</div><div class="av-gender">Male · 27</div></div>
+      <div class="av-card" data-avatar="avatar_jun" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Jun</div><div class="av-gender">Male · 33</div></div>
+      <div class="av-card" data-avatar="avatar_mei" data-country="chinese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Mei</div><div class="av-gender">Female · 25</div></div>
+      <div class="av-card" data-avatar="avatar_li" data-country="chinese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Li</div><div class="av-gender">Female · 29</div></div>
+
+      <div class="av-card" data-avatar="av_cn_boy" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_cn_girl" data-country="chinese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_cn_baby_boy" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_cn_baby_girl" data-country="chinese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_cn_old_man" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_cn_old_woman" data-country="chinese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_cn_1" data-country="chinese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Chinese Man</div><div class="av-gender">Male · early 30s</div></div>
+      <div class="av-card" data-avatar="av_cn_2" data-country="chinese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Chinese Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- JAPAN -->
+  <div id="avGrid-japanese" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-japanese" data-avatar="dynamic" data-country="japanese" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Japanese</div><div class="av-dyn-sub">AI generates a natural Japanese face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_kenji" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Kenji</div><div class="av-gender">Male · 31</div></div>
+      <div class="av-card" data-avatar="avatar_hiroshi" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Hiroshi</div><div class="av-gender">Male · 35</div></div>
+      <div class="av-card" data-avatar="avatar_takeshi" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Takeshi</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="avatar_yuki" data-country="japanese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Yuki</div><div class="av-gender">Female · 26</div></div>
+      <div class="av-card" data-avatar="avatar_hana" data-country="japanese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Hana</div><div class="av-gender">Female · 30</div></div>
+
+      <div class="av-card" data-avatar="av_jp_boy" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_jp_girl" data-country="japanese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_jp_baby_boy" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_jp_baby_girl" data-country="japanese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_jp_old_man" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_jp_old_woman" data-country="japanese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_jp_1" data-country="japanese" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Japanese Man</div><div class="av-gender">Male · early 30s</div></div>
+      <div class="av-card" data-avatar="av_jp_2" data-country="japanese" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Japanese Woman</div><div class="av-gender">Female · mid 20s</div></div>
+    </div>
+  </div>
+
+  <!-- KOREA -->
+  <div id="avGrid-korean" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-korean" data-avatar="dynamic" data-country="korean" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Korean</div><div class="av-dyn-sub">AI generates a natural Korean face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_minjun" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Minjun</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="avatar_seojun" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Seojun</div><div class="av-gender">Male · 30</div></div>
+      <div class="av-card" data-avatar="avatar_jihoon" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Jihoon</div><div class="av-gender">Male · 33</div></div>
+      <div class="av-card" data-avatar="avatar_jisoo" data-country="korean" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Jisoo</div><div class="av-gender">Female · 25</div></div>
+      <div class="av-card" data-avatar="avatar_chaeyeon" data-country="korean" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Chaeyeon</div><div class="av-gender">Female · 27</div></div>
+
+      <div class="av-card" data-avatar="av_kr_boy" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_kr_girl" data-country="korean" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_kr_baby_boy" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_kr_baby_girl" data-country="korean" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_kr_old_man" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_kr_old_woman" data-country="korean" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_kr_1" data-country="korean" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Korean Man</div><div class="av-gender">Male · late 20s</div></div>
+      <div class="av-card" data-avatar="av_kr_2" data-country="korean" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Korean Woman</div><div class="av-gender">Female · mid 20s</div></div>
+    </div>
+  </div>
+
+  <!-- EUROPE -->
+  <div id="avGrid-european" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-european" data-avatar="dynamic" data-country="european" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — European</div><div class="av-dyn-sub">AI generates a natural European face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_max" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Max</div><div class="av-gender">Male · 32</div></div>
+      <div class="av-card" data-avatar="avatar_luigi" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Luigi</div><div class="av-gender">Male · 35</div></div>
+      <div class="av-card" data-avatar="avatar_leon" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Leon</div><div class="av-gender">Male · 29</div></div>
+      <div class="av-card" data-avatar="avatar_sophie" data-country="european" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Sophie</div><div class="av-gender">Female · 28</div></div>
+      <div class="av-card" data-avatar="avatar_claire" data-country="european" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Claire</div><div class="av-gender">Female · 31</div></div>
+
+      <div class="av-card" data-avatar="av_eu_boy" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_eu_girl" data-country="european" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_eu_baby_boy" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_eu_baby_girl" data-country="european" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_eu_old_man" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_eu_old_woman" data-country="european" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_eu_1" data-country="european" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">European Man</div><div class="av-gender">Male · early 30s</div></div>
+      <div class="av-card" data-avatar="av_eu_2" data-country="european" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">European Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- ARABIC -->
+  <div id="avGrid-arabic" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-arabic" data-avatar="dynamic" data-country="arabic" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Arabic</div><div class="av-dyn-sub">AI generates a natural Arabic face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_omar" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Omar</div><div class="av-gender">Male · 32</div></div>
+      <div class="av-card" data-avatar="avatar_khalid" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Khalid</div><div class="av-gender">Male · 30</div></div>
+      <div class="av-card" data-avatar="avatar_hassan" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Hassan</div><div class="av-gender">Male · 35</div></div>
+      <div class="av-card" data-avatar="avatar_layla" data-country="arabic" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Layla</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="avatar_nour" data-country="arabic" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Nour</div><div class="av-gender">Female · 29</div></div>
+
+      <div class="av-card" data-avatar="av_ar_boy" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_ar_girl" data-country="arabic" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_ar_baby_boy" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_ar_baby_girl" data-country="arabic" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_ar_old_man" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_ar_old_woman" data-country="arabic" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_ar_1" data-country="arabic" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Arabic Man</div><div class="av-gender">Male · mid 30s</div></div>
+      <div class="av-card" data-avatar="av_ar_2" data-country="arabic" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Arabic Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- AUSTRALIA -->
+  <div id="avGrid-australian" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-australian" data-avatar="dynamic" data-country="australian" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Australian</div><div class="av-dyn-sub">AI generates a natural Australian face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_jack" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Jack</div><div class="av-gender">Male · 31</div></div>
+      <div class="av-card" data-avatar="avatar_liam_au" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Liam</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="avatar_ethan_au" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Ethan</div><div class="av-gender">Male · 34</div></div>
+      <div class="av-card" data-avatar="avatar_grace" data-country="australian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Grace</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="avatar_olivia_au" data-country="australian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Olivia</div><div class="av-gender">Female · 30</div></div>
+
+      <div class="av-card" data-avatar="av_au_boy" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_au_girl" data-country="australian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_au_baby_boy" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_au_baby_girl" data-country="australian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_au_old_man" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_au_old_woman" data-country="australian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_au_1" data-country="australian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Australian Man</div><div class="av-gender">Male · early 30s</div></div>
+      <div class="av-card" data-avatar="av_au_2" data-country="australian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Australian Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- BRAZIL -->
+  <div id="avGrid-brazilian" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-brazilian" data-avatar="dynamic" data-country="brazilian" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Brazilian</div><div class="av-dyn-sub">AI generates a natural Brazilian face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_lucas_br" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Lucas</div><div class="av-gender">Male · 29</div></div>
+      <div class="av-card" data-avatar="avatar_gabriel" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Gabriel</div><div class="av-gender">Male · 31</div></div>
+      <div class="av-card" data-avatar="avatar_mateus" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Mateus</div><div class="av-gender">Male · 27</div></div>
+      <div class="av-card" data-avatar="avatar_isabela" data-country="brazilian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Isabela</div><div class="av-gender">Female · 26</div></div>
+      <div class="av-card" data-avatar="avatar_camila" data-country="brazilian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Camila</div><div class="av-gender">Female · 30</div></div>
+
+      <div class="av-card" data-avatar="av_br_boy" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_br_girl" data-country="brazilian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_br_baby_boy" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_br_baby_girl" data-country="brazilian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_br_old_man" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_br_old_woman" data-country="brazilian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_br_1" data-country="brazilian" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Brazilian Man</div><div class="av-gender">Male · late 20s</div></div>
+      <div class="av-card" data-avatar="av_br_2" data-country="brazilian" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Brazilian Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- AFRICA -->
+  <div id="avGrid-african" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-african" data-avatar="dynamic" data-country="african" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — African</div><div class="av-dyn-sub">AI generates a natural African face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+    <div class="avatar-grid">
+      <div class="av-card" data-avatar="avatar_kofi" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Kofi</div><div class="av-gender">Male · 30</div></div>
+      <div class="av-card" data-avatar="avatar_kwame" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Kwame</div><div class="av-gender">Male · 33</div></div>
+      <div class="av-card" data-avatar="avatar_emeka" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">Emeka</div><div class="av-gender">Male · 28</div></div>
+      <div class="av-card" data-avatar="avatar_amara" data-country="african" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Amara</div><div class="av-gender">Female · 27</div></div>
+      <div class="av-card" data-avatar="avatar_zuri" data-country="african" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">Zuri</div><div class="av-gender">Female · 31</div></div>
+
+      <div class="av-card" data-avatar="av_af_boy" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👦</span></div><div class="av-name">Boy</div><div class="av-gender">Male · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_af_girl" data-country="african" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👧</span></div><div class="av-name">Girl</div><div class="av-gender">Female · 7-9 yrs</div></div>
+      <div class="av-card" data-avatar="av_af_baby_boy" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Boy</div><div class="av-gender">Male · 12 months</div></div>
+      <div class="av-card" data-avatar="av_af_baby_girl" data-country="african" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👶</span></div><div class="av-name">Baby Girl</div><div class="av-gender">Female · 12 months</div></div>
+      <div class="av-card" data-avatar="av_af_old_man" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👴</span></div><div class="av-name">Old Man</div><div class="av-gender">Male · 65-70</div></div>
+      <div class="av-card" data-avatar="av_af_old_woman" data-country="african" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👵</span></div><div class="av-name">Old Woman</div><div class="av-gender">Female · 65-70</div></div>
+      <div class="av-card" data-avatar="av_af_1" data-country="african" data-gender="male" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">🧑</span></div><div class="av-name">African Man</div><div class="av-gender">Male · early 30s</div></div>
+      <div class="av-card" data-avatar="av_af_2" data-country="african" data-gender="female" onclick="selectAvatar(this)"><div class="av-thumb"><span class="av-ph">👩</span></div><div class="av-name">African Woman</div><div class="av-gender">Female · late 20s</div></div>
+    </div>
+  </div>
+
+  <!-- GLOBAL -->
+  <div id="avGrid-global" class="avatar-grid-wrap">
+    <div class="av-dyn-card on" id="avDyn-global" data-avatar="dynamic" data-country="global" onclick="selectAvatar(this)">
+      <span class="av-dyn-ico">🤖</span><div class="av-dyn-text"><div class="av-dyn-title">Dynamic AI — Global</div><div class="av-dyn-sub">AI generates a diverse natural face each run</div></div><div class="av-dyn-check">✓</div>
+    </div>
+  </div>
+      <div class="sec-lbl" style="padding-top:20px">📍 Location / Scene</div>
+<div class="loc-grid" id="locGrid">
+    <!-- ── Fashion / Ethnic (highlighted group) ── -->
+    <div class="loc-card fashion-loc" data-loc="traditional saree showroom" onclick="selectLoc(this)"><div class="loc-card-ico">🧵</div><div class="loc-card-name">Saree Showroom</div></div>
+    <div class="loc-card fashion-loc" data-loc="temple courtyard heritage" onclick="selectLoc(this)"><div class="loc-card-ico">🛕</div><div class="loc-card-name">Temple Courtyard</div></div>
+    <div class="loc-card fashion-loc" data-loc="heritage home interior" onclick="selectLoc(this)"><div class="loc-card-ico">🪔</div><div class="loc-card-name">Heritage Home</div></div>
+    <div class="loc-card fashion-loc" data-loc="carved archway ethnic" onclick="selectLoc(this)"><div class="loc-card-ico">🏯</div><div class="loc-card-name">Ethnic Archway</div></div>
+    <div class="loc-card fashion-loc" data-loc="luxury marble hall" onclick="selectLoc(this)"><div class="loc-card-ico">✨</div><div class="loc-card-name">Marble Hall</div></div>
+    <div class="loc-card fashion-loc" data-loc="indian art gallery" onclick="selectLoc(this)"><div class="loc-card-ico">🖼</div><div class="loc-card-name">Art Gallery</div></div>
+    <div class="loc-card fashion-loc" data-loc="silk store interior" onclick="selectLoc(this)"><div class="loc-card-ico">🎀</div><div class="loc-card-name">Silk Store</div></div>
+    <div class="loc-card fashion-loc" data-loc="temple entrance evening" onclick="selectLoc(this)"><div class="loc-card-ico">🪔</div><div class="loc-card-name">Temple Evening</div></div>
+    <!-- ── General locations ── -->
+    <div class="loc-card on" data-loc="indoor home hall" onclick="selectLoc(this)"><div class="loc-card-ico">🏠</div><div class="loc-card-name">Home Hall</div></div>
+    <div class="loc-card" data-loc="studio" onclick="selectLoc(this)"><div class="loc-card-ico">📸</div><div class="loc-card-name">Studio</div></div>
+    <div class="loc-card" data-loc="indoor home kitchen" onclick="selectLoc(this)"><div class="loc-card-ico">🍳</div><div class="loc-card-name">Kitchen</div></div>
+    <div class="loc-card" data-loc="indoor home bedroom" onclick="selectLoc(this)"><div class="loc-card-ico">🛏</div><div class="loc-card-name">Bedroom</div></div>
+    <div class="loc-card" data-loc="indoor balcony" onclick="selectLoc(this)"><div class="loc-card-ico">🌅</div><div class="loc-card-name">Balcony</div></div>
+    <div class="loc-card" data-loc="outdoor home garden" onclick="selectLoc(this)"><div class="loc-card-ico">🌿</div><div class="loc-card-name">Garden</div></div>
+    <div class="loc-card" data-loc="outdoor home parking" onclick="selectLoc(this)"><div class="loc-card-ico">🚗</div><div class="loc-card-name">Parking</div></div>
+    <div class="loc-card" data-loc="coastal" onclick="selectLoc(this)"><div class="loc-card-ico">🏖</div><div class="loc-card-name">Coastal</div></div>
+    <div class="loc-card" data-loc="busy city" onclick="selectLoc(this)"><div class="loc-card-ico">🏙</div><div class="loc-card-name">City Street</div></div>
+    <div class="loc-card" data-loc="airport" onclick="selectLoc(this)"><div class="loc-card-ico">✈️</div><div class="loc-card-name">Airport</div></div>
+    <div class="loc-card" data-loc="metro station" onclick="selectLoc(this)"><div class="loc-card-ico">🚇</div><div class="loc-card-name">Metro</div></div>
+    <div class="loc-card" data-loc="bathroom" onclick="selectLoc(this)"><div class="loc-card-ico">🚿</div><div class="loc-card-name">Bathroom</div></div>
+    <div class="loc-card" data-loc="theater" onclick="selectLoc(this)"><div class="loc-card-ico">🎬</div><div class="loc-card-name">Theater</div></div>
+    <div class="loc-card" data-loc="mall" onclick="selectLoc(this)"><div class="loc-card-ico">🛍</div><div class="loc-card-name">Mall</div></div>
+    <div class="loc-card" data-loc="park" onclick="selectLoc(this)"><div class="loc-card-ico">🌳</div><div class="loc-card-name">Park</div></div>
+    <div class="loc-card" data-loc="wedding venue" onclick="selectLoc(this)"><div class="loc-card-ico">💒</div><div class="loc-card-name">Wedding Venue</div></div>
+    <div class="loc-card" data-loc="festival ground" onclick="selectLoc(this)"><div class="loc-card-ico">🎉</div><div class="loc-card-name">Festival Ground</div></div>
+    <div class="loc-card" data-loc="school" onclick="selectLoc(this)"><div class="loc-card-ico">🏫</div><div class="loc-card-name">School</div></div>
+    <div class="loc-card" data-loc="jewellery studio" onclick="selectLoc(this)"><div class="loc-card-ico">💎</div><div class="loc-card-name">Jewellery Studio</div></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- EMAIL -->
+  <div class="card">
+    <div class="ctitle">📧 Email Delivery</div>
+    <label class="lbl">Send results to this email</label>
+    <input class="inp" id="emailDisp" type="email" placeholder="Enter email address for delivery" oninput="checkReady()">
+    <div style="font-size:.75rem;color:var(--dim);margin-top:6px">📬 Your AI-generated photos will be emailed here when ready (~30 min). You can use a different email than your login.</div>
+  </div>
+
+  <div id="creditInfoRow" class="credit-row" style="display:none">
+    <span class="cr-lbl">💎 Credits available</span>
+    <span class="cr-val" id="creditInfoVal">—</span>
+  </div>
+  <div id="creditCostRow" class="credit-row" style="display:none;margin-top:-6px">
+    <span class="cr-lbl">This job will use</span>
+    <span id="creditCostVal" style="font-weight:700;color:var(--accent)">— credits</span>
+  </div>
+
+  <!-- SELECTION SUMMARY BAR -->
+  <div class="sel-summary" id="selSummary">
+    <div class="sel-summary-title">📋 Your Selection Summary</div>
+    <div class="sel-chips" id="selChips"></div>
+  </div>
+
+  <button class="sbtn" id="submitBtn" onclick="doSubmit()" disabled>
+    <span id="submitLbl">✨ Generate Photos</span>
+  </button>
+  <div id="submitErr" style="color:var(--red);font-size:.82rem;margin-top:10px;text-align:center"></div>
+
+  <div id="upgradeCard" class="upgrade-card" style="display:none">
+    <div class="upgrade-title">💎 More Credits Needed</div>
+    <div class="upgrade-sub" id="upgradeMsg">You need more credits to generate photos.</div>
+    <div class="upgrade-btns">
+      <a class="upgrade-wa" id="upgradeWaBtn" href="#" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+      <a class="upgrade-em" id="upgradeEmailBtn" href="#" target="_blank">✉️ Email Us</a>
+      <button class="upgrade-wa" style="background:var(--accent)" onclick="openUpgradeModal()">📋 View Plans</button>
+    </div>
+    <button class="plans-toggle" id="plansToggleBtn" onclick="toggleInlinePlans()">▼ View pricing plans</button>
+    <div id="inlinePlansWrap" style="display:none">
+      <table class="plans-table">
+        <thead><tr><th>Plan</th><th>Credits</th><th>Price</th><th>Rate</th><th>Validity</th></tr></thead>
+        <tbody>
+          <tr><td><span class="plan-badge plan-free">Free</span></td><td>20</td><td>₹0</td><td>—</td><td>Lifetime</td></tr>
+          <tr><td><span class="plan-badge plan-1">Plan 1</span></td><td>30</td><td>₹240</td><td>₹8/image</td><td>30 days</td></tr>
+          <tr><td><span class="plan-badge plan-2">Plan 2</span></td><td>60</td><td>₹480</td><td>₹8/image</td><td>60 days</td></tr>
+          <tr><td><span class="plan-badge plan-3">Plan 3</span></td><td>120</td><td>₹840</td><td>₹7/image</td><td>Never expires ✦</td></tr>
+          <tr><td><span class="plan-badge plan-4">Plan 4</span></td><td>250</td><td>₹1,500</td><td>₹6/image</td><td>Never expires ✦</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:.72rem;color:var(--dim);margin-top:6px">✦ Plans 3 & 4 never expire. 1 credit = 1 generated image.</div>
+    </div>
+  </div>
+</main>
+
+<!-- SUCCESS + STATUS TRACKER -->
+<div class="pg" id="successPanel">
+
+  <!-- Submitted card -->
+  <div class="scrd" style="margin-bottom:16px">
+    <div class="sico">✅</div>
+    <div class="stitle">Photos Submitted!</div>
+    <div class="ssub">
+      <strong id="sCount">0</strong> images queued for <strong id="sEmail"></strong>.<br>
+      Your AI-generated photos will be emailed when ready.
+    </div>
+    <div class="sjob" id="sJobId"></div>
+  </div>
+
+  <!-- Live status card -->
+  <div class="card" id="statusCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="ctitle" style="margin:0">📊 Job Status</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="pulse-dot" id="pulseDot"></div>
+        <span id="refreshLabel" style="font-size:.76rem;color:var(--dim)">Checking…</span>
+      </div>
+    </div>
+
+    <!-- Status row -->
+    <div class="status-row">
+      <div class="status-chip" id="statusChip">
+        <span id="statusIco">⏳</span>
+        <span id="statusTxt">Pending</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--dim)" id="statusTime"></div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="prog-track" id="progTrack" style="display:none">
+      <div class="prog-bar" id="progBar"></div>
+    </div>
+
+    <!-- Job details -->
+    <div class="detail-grid" id="detailGrid" style="display:none">
+      <div class="detail-item"><span class="detail-lbl">Job ID</span><span class="detail-val" id="dJobId">—</span></div>
+      <div class="detail-item"><span class="detail-lbl">Images</span><span class="detail-val" id="dImages">—</span></div>
+      <div class="detail-item"><span class="detail-lbl">Types</span><span class="detail-val" id="dTypes">—</span></div>
+      <div class="detail-item"><span class="detail-lbl">Submitted</span><span class="detail-val" id="dCreated">—</span></div>
+      <div class="detail-item" style="grid-column:1/-1"><span class="detail-lbl">📧 Delivery Email</span><span class="detail-val" id="dEmail" style="color:var(--accent);font-size:.82rem">—</span></div>
+    </div>
+
+    <!-- Done: image links -->
+    <div id="doneSection" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:14px 0 10px">
+        <div style="font-size:.85rem;font-weight:600;color:var(--green)">✅ Generation complete — <span id="doneCount">0</span> images ready</div>
+        <button class="dl-all-btn" onclick="downloadAllCurrent()">⬇ Download All</button>
+      </div>
+      <div id="imageLinks" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+    <!-- Failed -->
+    <div id="failedSection" style="display:none">
+      <div style="font-size:.85rem;color:var(--red);margin-top:14px">
+        ❌ Generation failed. Please try submitting again.
+      </div>
+    </div>
+
+    <!-- Refresh button -->
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="newbtn" onclick="pollStatus()" id="refreshBtn" style="margin:0;padding:8px 18px;font-size:.82rem">
+        🔄 Refresh Now
+      </button>
+      <button class="newbtn" onclick="startNewJob()" style="margin:0;padding:8px 18px;font-size:.82rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:var(--accent)">
+        ＋ Start New Job
+      </button>
+    </div>
+  </div>
+
+  <!-- Submitted Jobs history — persists across New Job clicks -->
+  <div class="card jhist-wrap" id="jobHistWrap" style="display:none">
+    <div class="jhist-title">
+      📋 Submitted Jobs
+      <span id="jobHistCount" style="background:var(--accent);color:#fff;font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:700"></span>
+    </div>
+    <table class="jhist-table">
+      <thead><tr><th>Job ID</th><th>Product</th><th>Photos</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+      <tbody id="jobHistBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+</div><!-- /page-batch -->
+
+<div id="page-jobs" class="tab-page">
+<div class="pg">
+  <div class="ptitle" style="margin-bottom:4px">&#128203; <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">My Jobs</span></div>
+  <div class="psub">All your AI photo generation jobs — current and past. Downloads stay available as long as the job exists.</div>
+  <div class="j-toolbar">
+    <span id="jCount" style="font-size:.82rem;color:var(--dim);font-weight:500"></span>
+    <button class="j-rbtn" onclick="loadJobs()"><span id="jRefIco">&#128260;</span> Refresh</button>
+  </div>
+  <div id="jLoading" style="text-align:center;padding:60px 20px;display:none"><div class="j-spinner"></div><div style="color:var(--dim);font-size:.9rem">Loading&hellip;</div></div>
+  <div id="jList"></div>
+  <div id="jEmpty" class="j-empty" style="display:none">
+    <div style="font-size:2.5rem;margin-bottom:10px">&#128444;</div>
+    <div style="font-weight:700;margin-bottom:6px;color:var(--dim2)">No jobs yet</div>
+    <div style="font-size:.85rem">Generate your first AI product photos and all your jobs will appear here.</div>
+  </div>
+</div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="moverlay" id="authModal">
+  <div class="mcrd">
+    <button class="mxbtn" onclick="closeModal()">✕</button>
+    <div class="mtitle">Sign in to VinSnap</div>
+    <input class="minp" id="liEmail" type="email" placeholder="Email address" autocomplete="email">
+    <input class="minp" id="liPass" type="password" placeholder="Password" autocomplete="current-password">
+    <button class="mbtn" onclick="doSignIn()">Sign In</button>
+    <div class="mmsg" id="liMsg"></div>
+    <div class="mswitch">New to VinSnap? <a onclick="showSignupNote()">Sign up</a></div>
+  </div>
+</div>
+
+<div class="toast-el" id="toastEl"></div>
+
+<!-- UPGRADE / PLANS MODAL -->
+<div class="moverlay" id="upgradeModal">
+  <div class="mcrd" style="max-width:520px;max-height:90vh;overflow-y:auto">
+    <button class="mxbtn" onclick="closeUpgradeModal()">✕</button>
+    <div class="mtitle">💎 Buy More Credits</div>
+    <div style="font-size:.84rem;color:var(--dim2);line-height:1.6;margin-bottom:16px">
+      1 credit = 1 generated image. Contact us on WhatsApp or email — we'll top up within minutes.
+    </div>
+    <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #6ee7b7;border-radius:var(--rx);padding:11px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:.85rem;font-weight:600;color:#065f46">Your current balance</span>
+      <span style="font-size:1.1rem;font-weight:800;color:#059669" id="modalCreditCount">— credits</span>
+    </div>
+    <table class="plans-table">
+      <thead><tr><th>Plan</th><th>Credits</th><th>Price</th><th>Rate</th><th>Validity</th></tr></thead>
+      <tbody>
+        <tr><td><span class="plan-badge plan-free">Free</span></td><td>20</td><td>₹0</td><td>—</td><td>Lifetime</td></tr>
+        <tr><td><span class="plan-badge plan-1">Plan 1</span></td><td>30</td><td><strong>₹240</strong></td><td>₹8/image</td><td>30 days</td></tr>
+        <tr><td><span class="plan-badge plan-2">Plan 2</span></td><td>60</td><td><strong>₹480</strong></td><td>₹8/image</td><td>60 days</td></tr>
+        <tr><td><span class="plan-badge plan-3">Plan 3 ✦</span></td><td>120</td><td><strong>₹840</strong></td><td>₹7/image</td><td>Never expires</td></tr>
+        <tr><td><span class="plan-badge plan-4">Plan 4 ✦</span></td><td>250</td><td><strong>₹1,500</strong></td><td>₹6/image</td><td>Never expires</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:.72rem;color:var(--dim);margin-top:6px;margin-bottom:18px">✦ Plans 3 & 4 never expire — best value for regular sellers.</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a class="upgrade-wa" id="modalWaBtn" href="#" target="_blank" style="justify-content:center;padding:12px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp: +91 98415 36868
+      </a>
+      <a class="upgrade-em" id="modalEmailBtn" href="#" target="_blank" style="justify-content:center;padding:12px">
+        ✉️ Email: vinmediaai@gmail.com
+      </a>
+    </div>
+    <div style="font-size:.75rem;color:var(--dim);text-align:center;margin-top:12px">Credits added within 15 minutes of payment confirmation.</div>
+  </div>
+</div>
+
+<script>
+// ══ CONFIG ═══════════════════════════════════════════════════════════
+const SB_URL     = 'https://rqzflfyqazklfnfxefct.supabase.co';
+const SB_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxemZsZnlxYXprbGZuZnhlZmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMjgxMDIsImV4cCI6MjA5MTgwNDEwMn0.q3F9dEDdNQ7kBGtReTQx6r8wvgGks5lL-ThZAi2uPEY';
+const WEBHOOK_A  = 'https://vinsnap-init-gdsqg4fv7q-uc.a.run.app/';
+const WEBHOOK_B  = 'https://vinsnap-process-gdsqg4fv7q-uc.a.run.app/';
+const GCS_BUCKET = 'vinsnap-store';
+const { createClient } = window.supabase;
+const sb = createClient(SB_URL, SB_KEY);
+
+// ══ STATE ════════════════════════════════════════════════════════════
+let user           = null;
+let uploads        = [];
+let avatarId       = 'dynamic';
+let avatarCountry  = 'india';
+let locationVariant = '';
+let genMode        = 'dynamic';
+let _userCredits   = null; // { credits_remaining, credits_reserved, plan_name, expires_at }
+
+// ══ SUBCATEGORY MAP ══════════════════════════════════════════════════
+const SHOT_LABELS = {
+  hero:       'Hero',
+  lifestyle1: 'Lifestyle 1',
+  lifestyle2: 'Lifestyle 2',
+  lifestyle3: 'Lifestyle 3',
+};
+
+const SUBCATS = {
+  womens_fashion:[
+    'womens_saree','womens_kurti','womens_kurta_set','womens_suit_dress_material',
+    'womens_lehenga','womens_blouse_dupatta','womens_abaya','womens_petticoat',
+    'womens_top_tunic','womens_dress_gown','womens_coord_set',
+    'womens_jeans_leggings','womens_activewear','womens_maternity',
+    'womens_swimwear','womens_innerwear','womens_sleepwear'
+  ],
+  mens_fashion:[
+    'mens_tshirt','mens_casual_shirt','mens_jeans_chinos',
+    'mens_track_pants','mens_sweatshirt_hoodie','mens_jacket_coat',
+    'mens_rainwear','mens_formal_shirt','mens_formal_trousers',
+    'mens_suit_blazer','mens_kurta','mens_kurta_set',
+    'mens_sherwani','mens_dhoti_mundu','mens_activewear',
+    'mens_swimwear','mens_nightwear','mens_innerwear','mens_socks'
+  ],
+  kids_fashion:[
+    'kids_infant_newborn','kids_baby_rompers',
+    'kids_boys_set','kids_girls_set','kids_ethnic',
+    'kids_school_uniform','kids_activewear','kids_winter',
+    'kids_combo_set','kids_swimwear'
+  ],
+  footwear:[
+    'footwear_womens_heels','footwear_womens_flats',
+    'footwear_womens_ethnic','footwear_mens_casual',
+    'footwear_mens_formal','footwear_mens_sports',
+    'footwear_mens_ethnic','footwear_sneakers',
+    'footwear_boots','footwear_flipflops',
+    'footwear_kids','footwear_sports_running',
+    'footwear_orthopaedic','footwear_rain_boots','footwear_school_shoes'
+  ],
+  jewellery:[
+    'jewellery_necklace','jewellery_earring',
+    'jewellery_set','jewellery_bangle','jewellery_bracelet',
+    'jewellery_anklet','jewellery_ring','jewellery_pendant',
+    'jewellery_maang_tikka','jewellery_nose_pin','jewellery_toe_ring',
+    'jewellery_brooch','jewellery_mens_chain'
+  ],
+  accessories:[
+    'acc_handbag','acc_sling_bag','acc_backpack',
+    'acc_tote_bag','acc_luggage','acc_watch',
+    'acc_smartwatch','acc_sunglasses','acc_hair_accessories',
+    'acc_caps_hats','acc_scarf'
+  ],
+  home_kitchen:[
+    'home_cookware','home_bakeware','home_storage',
+    'home_dinnerware','home_glassware','home_appliance'
+  ],
+  home_decor:[
+    'home_bedsheet','home_cushion','home_curtain','home_comforter',
+    'home_carpet','home_wall_art','home_candle','home_led_lights'
+  ],
+  beauty:[
+    'beauty_moisturizer','beauty_face_wash','beauty_sunscreen',
+    'beauty_eye_cream','beauty_lip_care','beauty_body_lotion',
+    'beauty_baby_skincare','beauty_mens_skincare',
+    'beauty_haircare','beauty_makeup','beauty_nail_care',
+    'beauty_perfume','beauty_grooming_tools','beauty_beard_care'
+  ],
+  electronics:[
+    'electronics_earbuds','electronics_speaker',
+    'electronics_phone_case','electronics_charger',
+    'electronics_power_bank','electronics_cable',
+    'electronics_popsocket','electronics_watch',
+    'electronics_smartwatch','electronics_laptop_accessories',
+    'electronics_keyboard_mouse','electronics_camera_accessories',
+    'electronics_smart_home','electronics_gaming','electronics_router'
+  ],
+  health:[
+    'health_yoga_fitness','health_gym_equipment',
+    'health_supplement','health_monitor','health_glucometer',
+    'health_massager','health_personal_care',
+    'health_first_aid','health_baby_care'
+  ],
+  toys:[
+    'toys_outdoor_sports','toys_educational','toys_electric_rc',
+    'toys_indoor_pretend','toys_soft','toys_board_games',
+    'toys_building','toys_action','toys_art_craft','toys_puzzles'
+  ],
+  stationery:[
+    'stationery_school_bag','stationery_notebook','stationery_pen',
+    'stationery_art','stationery_lunch_box','stationery_water_bottle',
+    'stationery_desk_organiser','stationery_calculator','stationery_planner'
+  ],
+  other:[]
+};
+
+// ══ SUBCATEGORY LABEL OVERRIDES ══════════════════════════════════════
+// Keys that auto-titlecase badly get a clean display label here
+const SUBCAT_LABELS = {
+  'jewellery_ring_womens':  "💍 Ring (Women's)",
+  'jewellery_ring_mens':    "💍 Ring (Men's)",
+  'jewellery_mens_chain':   "⛓ Chain (Men's)",
+  'jewellery_maang_tikka':  "🌺 Maang Tikka",
+  'kids_baby_rompers':      "👶 Baby Rompers",
+  'kids_infant':            "👶 Infant Wear",
+  'acc_handbag':            "👜 Handbag",
+  'acc_sling_bag':          "🎒 Sling Bag",
+  'acc_backpack':           "🎒 Backpack",
+  'acc_wallet':             "👛 Wallet (Men's)",
+  'acc_belt':               "🪢 Belt (Men's)",
+  'acc_watch':              "⌚ Watch",
+  'acc_smartwatch':         "⌚ Smartwatch",
+  'acc_sunglasses':         "🕶 Sunglasses",
+  'acc_scarf':              "🧣 Scarf",
+  'home_cookware':          "🍳 Cookware",
+  'home_bakeware':          "🥧 Bakeware",
+  'home_storage':           "📦 Storage",
+  'home_dinnerware':        "🍽 Dinnerware",
+  'home_glassware':         "🥛 Glassware",
+  'home_appliance':         "🔌 Appliance",
+  'home_bedsheet':          "🛏 Bedsheet",
+  'home_cushion':           "🛋 Cushion",
+  'home_curtain':           "🪟 Curtain",
+  'home_comforter':         "🛌 Comforter",
+  'home_carpet':            "🪃 Carpet / Rug",
+  'home_wall_art':          "🖼 Wall Art",
+  'home_candle':            "🕯 Candle",
+  'home_led_lights':        "💡 LED Lights",
+  'beauty_skincare':        "✨ Skincare",
+  'beauty_haircare':        "💆 Haircare",
+  'beauty_makeup':          "💄 Makeup",
+  'beauty_perfume':         "🌸 Perfume",
+  'skincare_baby':          "👶 Baby Skincare",
+  'health_fitness':         "🏋 Fitness Equipment",
+  'health_massager':        "💆 Massager",
+  'health_monitor':         "📊 Health Monitor",
+  'health_supplement':      "💊 Supplement",
+  'health_personal_care':   "🪥 Personal Care",
+  'electronics_earbuds':    "🎧 Earbuds",
+  'electronics_watch':      "⌚ Smart Watch",
+  'electronics_smartwatch': "⌚ Smartwatch",
+  'electronics_phone':      "📱 Phone Case / Cover",
+  'electronics_tablet':     "📱 Tablet",
+  'electronics_laptop':     "💻 Laptop / Sleeve",
+  'electronics_camera':     "📷 Camera",
+  'toys_soft':              "🧸 Soft Toy",
+  'toys_building':          "🧱 Building Blocks",
+  'toys_action':            "🤖 Action Figure",
+  'toys_educational':       "📚 Educational Toy",
+  'rideon':                 "🚗 Ride-On Car",
+  'toys_baby':              "🍼 Baby Toy",
+  'stationery_pen':         "✒ Pen",
+  'stationery_notebook':    "📓 Notebook",
+  'stationery_art':         "🎨 Art & Craft",
+  'stationery_school':      "🎒 School Bag",
+  'womens_ethnic_saree':    "🥻 Saree",
+  'womens_ethnic_lehenga':  "👗 Lehenga",
+  'womens_ethnic_kurti':    "👘 Kurti",
+  'womens_western_co-ord':  "👗 Co-ord Set",
+  'kids_baby_rompers':      "👶 Baby Rompers",
+  'footwear_heels':         "👠 Heels",
+  'footwear_flats':         "🥿 Flats",
+  'footwear_sandals':       "👡 Sandals",
+  'footwear_sneakers':      "👟 Sneakers",
+  'footwear_boots':         "🥾 Boots",
+  'footwear_ethnic':        "👡 Ethnic Footwear",
+  'footwear_kids':          "👟 Kids Footwear",
+
+  // ── WOMENS FASHION ──
+  'womens_saree':               "🥻 Saree",
+  'womens_kurti':               "👘 Kurti",
+  'womens_kurta_set':           "👘 Kurta Set",
+  'womens_suit_dress_material': "👗 Suit & Dress Material",
+  'womens_lehenga':             "👗 Lehenga & Choli",
+  'womens_blouse_dupatta':      "👗 Blouse & Dupatta",
+  'womens_abaya':               "🧕 Abaya & Ethnic Jacket",
+  'womens_petticoat':           "👗 Petticoat & Ethnic Bottom",
+  'womens_top_tunic':           "👚 Top, Tunic & T-Shirt",
+  'womens_dress_gown':          "👗 Dress & Gown",
+  'womens_coord_set':           "👗 Co-ord Set",
+  'womens_jeans_leggings':      "👖 Jeans, Leggings & Palazzo",
+  'womens_activewear':          "🏃 Activewear & Yoga Wear",
+  'womens_maternity':           "🤰 Maternity Wear",
+  'womens_swimwear':            "👙 Swimwear",
+  'womens_innerwear':           "🩱 Bras & Innerwear",
+  'womens_sleepwear':           "😴 Night Suits & Sleepwear",
+
+  // ── MENS FASHION ──
+  'mens_tshirt':                "👕 T-Shirt",
+  'mens_casual_shirt':          "👔 Casual Shirt",
+  'mens_jeans_chinos':          "👖 Jeans & Chinos",
+  'mens_track_pants':           "🩳 Track Pants & Joggers",
+  'mens_sweatshirt_hoodie':     "🧥 Sweatshirt & Hoodie",
+  'mens_jacket_coat':           "🧥 Jacket & Coat",
+  'mens_rainwear':              "🌧 Rainwear",
+  'mens_formal_shirt':          "👔 Formal Shirt",
+  'mens_formal_trousers':       "👔 Formal Trousers",
+  'mens_suit_blazer':           "🤵 Suit & Blazer",
+  'mens_kurta':                 "🧥 Kurta",
+  'mens_kurta_set':             "🧥 Kurta Set",
+  'mens_sherwani':              "🤵 Sherwani",
+  'mens_dhoti_mundu':           "🧣 Dhoti & Mundu",
+  'mens_activewear':            "🏋 Activewear & Gym Wear",
+  'mens_swimwear':              "🩱 Swimwear",
+  'mens_nightwear':             "😴 Nightwear & Lounge Wear",
+  'mens_innerwear':             "🩲 Innerwear & Vests",
+  'mens_socks':                 "🧦 Socks",
+
+  // ── KIDS FASHION ──
+  'kids_infant_newborn':        "👶 Infant & Newborn (0–12m)",
+  'kids_baby_rompers':          "👶 Baby Dresses & Rompers",
+  'kids_boys_set':              "👦 Boys' Clothing Sets",
+  'kids_girls_set':             "👧 Girls' Clothing Sets",
+  'kids_ethnic':                "🎎 Kids' Ethnic Wear",
+  'kids_school_uniform':        "🏫 School Uniform",
+  'kids_activewear':            "🏃 Kids' Activewear",
+  'kids_winter':                "🧥 Winter Wear & Jackets",
+  'kids_combo_set':             "🎁 Combo Set",
+  'kids_swimwear':              "🩱 Kids' Swimwear",
+
+  // ── FOOTWEAR ──
+  'footwear_womens_heels':      "👠 Women's Heels & Wedges",
+  'footwear_womens_flats':      "🥿 Women's Flats & Sandals",
+  'footwear_womens_ethnic':     "👡 Women's Ethnic Footwear",
+  'footwear_mens_casual':       "👞 Men's Casual Shoes",
+  'footwear_mens_formal':       "👞 Men's Formal Shoes",
+  'footwear_mens_sports':       "👟 Men's Sports Shoes",
+  'footwear_mens_ethnic':       "🥿 Men's Ethnic Footwear",
+  'footwear_sneakers':          "👟 Sneakers",
+  'footwear_boots':             "🥾 Boots & Ankle Boots",
+  'footwear_flipflops':         "🩴 Flip-Flops & Slippers",
+  'footwear_sports_running':    "👟 Sports & Running Shoes",
+  'footwear_orthopaedic':       "👞 Orthopaedic & Comfort",
+  'footwear_rain_boots':        "🥾 Rain Boots",
+  'footwear_school_shoes':      "👟 School Shoes",
+
+  // ── JEWELLERY ──
+  'jewellery_ring':             "💍 Ring",
+  'jewellery_pendant':          "📿 Pendant",
+  'jewellery_nose_pin':         "💎 Nose Pin",
+  'jewellery_toe_ring':         "💍 Toe Ring",
+  'jewellery_brooch':           "📌 Brooch & Pin",
+
+  // ── ACCESSORIES ──
+  'acc_tote_bag':               "🛍 Tote Bag",
+  'acc_luggage':                "🧳 Luggage & Trolley Bag",
+  'acc_hair_accessories':       "💇 Hair Accessories",
+  'acc_caps_hats':              "🧢 Caps & Hats",
+
+  // ── BEAUTY ──
+  'beauty_moisturizer':         "🧴 Moisturizer & Serum",
+  'beauty_face_wash':           "🧼 Face Wash & Mask",
+  'beauty_sunscreen':           "☀️ Sunscreen",
+  'beauty_eye_cream':           "👁 Eye Cream",
+  'beauty_lip_care':            "💋 Lip Balm & Lip Care",
+  'beauty_body_lotion':         "🧴 Body Lotion & Body Wash",
+  'beauty_baby_skincare':       "👶 Baby Skincare",
+  'beauty_mens_skincare':       "🧖 Men's Skincare",
+  'beauty_nail_care':           "💅 Nail Care",
+  'beauty_grooming_tools':      "✂️ Grooming Tools & Trimmer",
+  'beauty_beard_care':          "🧔 Beard Care",
+
+  // ── ELECTRONICS ──
+  'electronics_speaker':            "🔊 Bluetooth Speaker",
+  'electronics_phone_case':         "📱 Phone Case & Cover",
+  'electronics_charger':            "🔌 Charger & Adapter",
+  'electronics_power_bank':         "🔋 Power Bank",
+  'electronics_cable':              "🔌 USB Cable",
+  'electronics_popsocket':          "📱 Pop Socket & Stand",
+  'electronics_laptop_accessories': "💻 Laptop & Tablet Accessories",
+  'electronics_keyboard_mouse':     "⌨️ Keyboard & Mouse",
+  'electronics_camera_accessories': "📷 Camera Accessories",
+  'electronics_smart_home':         "🏠 Smart Home Device",
+  'electronics_gaming':             "🎮 Gaming Accessories",
+  'electronics_router':             "📡 Router & Networking",
+
+  // ── HEALTH ──
+  'health_yoga_fitness':        "🧘 Yoga & Fitness Equipment",
+  'health_gym_equipment':       "🏋 Gym Equipment & Weights",
+  'health_glucometer':          "🩸 Glucometer",
+  'health_first_aid':           "🩹 First Aid",
+  'health_baby_care':           "👶 Baby Health & Care",
+
+  // ── TOYS ──
+  'toys_outdoor_sports':        "⚽ Outdoor & Sports Toys",
+  'toys_electric_rc':           "🚗 Electric & RC Toys",
+  'toys_indoor_pretend':        "🎭 Indoor & Pretend Play",
+  'toys_board_games':           "🎲 Board Games & Card Games",
+  'toys_art_craft':             "🎨 Art & Craft Kits",
+  'toys_puzzles':               "🧩 Puzzles",
+
+  // ── STATIONERY ──
+  'stationery_school_bag':      "🎒 School Bag & Backpack",
+  'stationery_lunch_box':       "🍱 Lunch Box",
+  'stationery_water_bottle':    "🍶 Water Bottle",
+  'stationery_desk_organiser':  "🗂 Desk Organiser",
+  'stationery_calculator':      "🔢 Calculator",
+  'stationery_planner':         "📅 Planner",
+};
+sb.auth.onAuthStateChange((_e, session) => {
+  user = session?.user || null;
+  const btn = document.getElementById('authBtn');
+  const badge = document.getElementById('ubadge');
+  const emailDisp = document.getElementById('emailDisp');
+  if (user) {
+    btn.textContent = 'Sign Out'; btn.onclick = doSignOut; btn.className = 'auth-btn sign-out';
+    badge.textContent = user.email.split('@')[0];
+    if (!emailDisp.value.trim()) emailDisp.value = user.email;
+    closeModal();
+    loadCredits(user.email);
+    const saved = localStorage.getItem('vs_active_job');
+    if (saved) {
+      try {
+        const j = JSON.parse(saved);
+        if (j.jobId && j.email === user.email) {
+          showStatusPanel(j.jobId, j.totalImages, user.email, /*restore=*/true, j.productName||'');
+        }
+      } catch(e) { localStorage.removeItem('vs_active_job'); }
+    }
+  } else {
+    btn.textContent = 'Sign In'; btn.onclick = openModal; btn.className = 'auth-btn sign-in';
+    badge.textContent = 'Sign in to use';
+    emailDisp.value = '';
+    _userCredits = null;
+    document.getElementById('creditBadge').style.display = 'none';
+    document.getElementById('creditInfoRow').style.display = 'none';
+    document.getElementById('creditCostRow').style.display = 'none';
+    document.getElementById('upgradeCard').style.display = 'none';
+    clearInterval(_pollTimer);
+    document.getElementById('tab-newjob').style.display = 'none';
+  }
+  checkReady();
+});
+async function doSignIn() {
+  const email = document.getElementById('liEmail').value.trim();
+  const pass  = document.getElementById('liPass').value;
+  if (!email||!pass) { liMsg('Please fill in all fields.','err'); return; }
+  const {error} = await sb.auth.signInWithPassword({email, password:pass});
+  if (error) liMsg(error.message,'err');
+}
+async function doSignOut() { await sb.auth.signOut(); }
+function openModal()  { document.getElementById('authModal').classList.add('open'); }
+function closeModal() { document.getElementById('authModal').classList.remove('open'); }
+function liMsg(msg,type) { const el=document.getElementById('liMsg'); el.textContent=msg; el.className='mmsg '+type; }
+function showSignupNote() { toast('Please sign up on the main VinSnap page.'); closeModal(); }
+
+// ══ CATEGORY ═════════════════════════════════════════════════════════
+function onCatChange() {
+  const cat = document.getElementById('catSel').value;
+  const sub = document.getElementById('subSel');
+  sub.innerHTML = '<option value="">Select subcategory…</option>';
+  (SUBCATS[cat]||[]).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s;
+    o.textContent = SUBCAT_LABELS[s] || s.replace(/_/g,' ').replace(/\w/g, c=>c.toUpperCase());
+    sub.appendChild(o);
+  });
+  checkReady();
+}
+
+// ══ UPLOAD ═══════════════════════════════════════════════════════════
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uzone').classList.remove('drag-over');
+  handleFiles(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));
+}
+function onFilePick(e) { handleFiles(Array.from(e.target.files)); e.target.value=''; }
+
+async function handleFiles(files) {
+  const rem = 10 - uploads.length;
+  if (rem<=0) { toast('Maximum 10 images reached'); return; }
+  if (files.length>rem) toast(`Only ${rem} more image(s) can be added`);
+  for (const f of files.slice(0,rem)) {
+    if (f.size > 10*1024*1024) { toast(`${f.name} too large (max 10MB)`); continue; }
+    const blob = await compress(f);
+    const b64  = await readB64(blob);
+    uploads.push({ base64: b64.split(',')[1], mimeType: f.type||'image/jpeg', index: uploads.length });
+  }
+  renderThumbs(); updateCounter(); checkReady();
+}
+
+function renderThumbs() {
+  const g = document.getElementById('thumbGrid'); g.innerHTML='';
+  uploads.forEach((u,i) => {
+    const d = document.createElement('div'); d.className='titem';
+    d.innerHTML = `<img src="data:${u.mimeType};base64,${u.base64}"><button class="tremove" onclick="removeThumb(${i})">✕</button><span class="tidx">${i+1}</span>`;
+    g.appendChild(d);
+  });
+}
+function removeThumb(i) {
+  uploads.splice(i,1); uploads.forEach((u,idx)=>u.index=idx);
+  renderThumbs(); updateCounter(); checkReady();
+}
+
+function compress(file, maxPx=1500, q=0.82) {
+  return new Promise(res => {
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if (w<=maxPx && h<=maxPx && file.size<800*1024) { res(file); return; }
+      const s=Math.min(1,maxPx/Math.max(w,h));
+      w=Math.round(w*s); h=Math.round(h*s);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(b=>res(b||file),'image/jpeg',q);
+    };
+    img.onerror = ()=>res(file);
+    img.src = url;
+  });
+}
+function readB64(file) {
+  return new Promise((res,rej) => {
+    const r=new FileReader();
+    r.onload=()=>res(r.result); r.onerror=()=>rej(new Error('read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ══ IMAGE TYPES ══════════════════════════════════════════════════════
+function onTypeTick(cb) {
+  cb.closest('.tycb').classList.toggle('on', cb.checked);
+  updateCounter(); checkReady();
+}
+function getTypes() {
+  return Array.from(document.querySelectorAll('.tycb input:checked')).map(c=>c.value);
+}
+
+// ══ COUNT BANNER ═════════════════════════════════════════════════════
+function updateCounter() {
+  const imgs=uploads.length, types=getTypes().length, total=imgs*types;
+  const b=document.getElementById('countBanner');
+  if (total>0) {
+    b.classList.remove('hidden');
+    document.getElementById('countNum').textContent  = total;
+    document.getElementById('countBreak').textContent = `${imgs} image${imgs!==1?'s':''} × ${types} type${types!==1?'s':''}`;
+  } else b.classList.add('hidden');
+}
+
+// ══ MODE ═════════════════════════════════════════════════════════════
+function setMode(m) {
+  genMode = m;
+  document.getElementById('modeDyn').classList.toggle('on', m==='dynamic');
+  document.getElementById('modeCus').classList.toggle('on', m==='custom');
+  document.getElementById('customPanel').style.display = m==='custom' ? 'block' : 'none';
+  if (m==='dynamic') { avatarId='dynamic'; avatarCountry='india'; locationVariant=''; }
+  updateSummaryBar();
+}
+
+// ══ AVATAR FUNCTIONS (minimal — only what's needed) ══════════════════
+function selectCountry(el) {
+  document.querySelectorAll('.av-country-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.avatar-grid-wrap').forEach(g=>g.classList.remove('on'));
+  el.classList.add('on');
+  avatarCountry = el.dataset.country;
+  const grid = document.getElementById('avGrid-'+avatarCountry);
+  if (grid) grid.classList.add('on');
+  const dyn = document.getElementById('avDyn-'+avatarCountry);
+  if (dyn) selectAvatar(dyn);
+}
+function selectAvatar(el) {
+  const country = el.dataset.country;
+  const grid = document.getElementById('avGrid-'+country);
+  if (grid) {
+    grid.querySelectorAll('.av-card').forEach(c=>c.classList.remove('on'));
+    const dyn = grid.querySelector('.av-dyn-card');
+    if (dyn) dyn.classList.remove('on');
+  }
+  el.classList.add('on');
+  avatarId = el.dataset.avatar;
+  updateSummaryBar();
+}
+
+// ══ LOCATION FUNCTION ════════════════════════════════════════════════
+function selectLoc(el) {
+  document.querySelectorAll('.loc-card').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  locationVariant = el.dataset.loc;
+  updateSummaryBar();
+}
+
+// ══ SUBMIT ═══════════════════════════════════════════════════════════
+function checkReady() {
+  const deliveryEmail = (document.getElementById('emailDisp').value || '').trim();
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(deliveryEmail);
+  const creditsNeeded = uploads.length * getTypes().length;
+
+  // Update credit cost display
+  const costRow = document.getElementById('creditCostRow');
+  const costVal = document.getElementById('creditCostVal');
+  if (user && creditsNeeded > 0) {
+    costRow.style.display = 'flex';
+    const rem = _userCredits ? _userCredits.credits_remaining : 0;
+    costVal.textContent = creditsNeeded + ' credit' + (creditsNeeded !== 1 ? 's' : '');
+    costVal.style.color = rem >= creditsNeeded ? 'var(--accent)' : 'var(--red)';
+  } else {
+    costRow.style.display = 'none';
+  }
+
+  const hasCredits = !user || !_userCredits || _userCredits.credits_remaining >= creditsNeeded;
+  const ok = user &&
+    uploads.length > 0 &&
+    document.getElementById('catSel').value &&
+    getTypes().length > 0 &&
+    document.getElementById('productName').value.trim() &&
+    emailValid &&
+    hasCredits;
+  document.getElementById('submitBtn').disabled = !ok;
+  updateSummaryBar();
+
+  // Show/hide upgrade card
+  const upgradeCard = document.getElementById('upgradeCard');
+  if (user && _userCredits && creditsNeeded > 0 && _userCredits.credits_remaining < creditsNeeded) {
+    upgradeCard.style.display = 'block';
+    const rem = _userCredits.credits_remaining;
+    document.getElementById('upgradeMsg').textContent =
+      `You need ${creditsNeeded} credits but only have ${rem} remaining. Purchase more credits to continue.`;
+    _updateContactLinks(creditsNeeded);
+  } else if (user && _userCredits) {
+    upgradeCard.style.display = 'none';
+  }
+}
+
+// ══ SELECTION SUMMARY BAR ════════════════════════════════════════════
+function updateSummaryBar() {
+  const bar = document.getElementById('selSummary');
+  const chips = document.getElementById('selChips');
+  if (!bar || !chips) return;
+
+  const productName = (document.getElementById('productName').value || '').trim();
+  const catEl = document.getElementById('catSel');
+  const subEl = document.getElementById('subSel');
+  const catText = catEl.options[catEl.selectedIndex]?.text || '';
+  const subText = subEl.options[subEl.selectedIndex]?.text || '';
+  const imgCount = (typeof uploads !== 'undefined') ? uploads.length : 0;
+  const mode = (typeof genMode !== 'undefined') ? genMode : 'dynamic';
+
+  // Get avatar display name
+  let avatarName = '—';
+  if (typeof avatarId !== 'undefined' && avatarId) {
+    if (avatarId === 'dynamic') {
+      avatarName = '🤖 Dynamic AI';
+    } else {
+      const avEl = document.querySelector(`.av-card.on, .av-dyn-card.on`);
+      avatarName = avEl ? (avEl.querySelector('.av-name')?.textContent || avatarId) : avatarId;
+    }
+  }
+
+  // Get location display name
+  let locName = '—';
+  const locEl = document.querySelector('.loc-card.on');
+  if (locEl) locName = locEl.querySelector('.loc-card-name')?.textContent || locEl.dataset.loc || '—';
+
+  const chip = (label, value, hasValue) =>
+    `<span class="sel-chip${hasValue ? '' : ' empty'}"><span class="chip-lbl">${label}</span>${value}</span>`;
+
+  chips.innerHTML =
+    chip('📸 Images', imgCount > 0 ? imgCount + (imgCount===1?' image':' images') : 'None', imgCount > 0) +
+    chip('🏷️ Product', productName || 'Not set', !!productName) +
+    chip('📂 Category', catText && catEl.value ? catText.replace(/^[^\w]*/, '') : 'Not selected', !!catEl.value) +
+    (subEl.value ? chip('📌 Subcategory', subText.replace(/^[^\w]*/, ''), true) : '') +
+    chip('⚡ Mode', mode === 'custom' ? '🎨 Custom' : '🤖 Dynamic', true) +
+    (mode === 'custom' ? chip('🧑 Avatar', avatarName, avatarName !== '—') : '') +
+    (mode === 'custom' ? chip('📍 Location', locName !== '—' ? locName : 'Not selected', locName !== '—') : '');
+
+  // Show bar only when there's something meaningful
+  const hasAny = imgCount > 0 || productName || catEl.value;
+  bar.classList.toggle('visible', hasAny);
+}
+
+async function doSubmit() {
+  if (!user) { openModal(); return; }
+  const name  = document.getElementById('productName').value.trim();
+  const cat   = document.getElementById('catSel').value;
+  const sub   = document.getElementById('subSel').value;
+  const types = getTypes();
+  const deliveryEmail = (document.getElementById('emailDisp').value || '').trim();
+  document.getElementById('submitErr').textContent = '';
+  if (!uploads.length) { showErr('Please upload at least one image.'); return; }
+  if (!cat)            { showErr('Please select a category.'); return; }
+  if (!types.length)   { showErr('Please select at least one image type.'); return; }
+  if (!name)           { showErr('Please enter a product name.'); return; }
+  if (!deliveryEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(deliveryEmail)) { showErr('Please enter a valid delivery email address.'); return; }
+  if (genMode==='custom' && !locationVariant) { showErr('Please select a location in Custom mode.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+
+  const config = {
+    productName: name, category: cat, subcategory: sub,
+    email: user.email, deliveryEmail: deliveryEmail, mode: genMode,
+    avatarId:        genMode==='custom' ? avatarId        : 'dynamic',
+    avatarCountry:   genMode==='custom' ? avatarCountry   : 'india',
+    locationVariant: genMode==='custom' ? 'dynamic'       : 'dynamic',
+    customLocation:  genMode==='custom' ? locationVariant : '',
+    selectedTypes: types,
+    imageCount: uploads.length
+  };
+
+  try {
+    setSubmitStep('Getting job ID…');
+    const respA = await fetch(WEBHOOK_A, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(config)
+    });
+
+    // 402 = insufficient credits
+    if (respA.status === 402) {
+      const errData = await respA.json();
+      btn.disabled = false;
+      document.getElementById('submitLbl').innerHTML = '✨ Generate Photos';
+      if (errData.credits_remaining !== undefined && _userCredits) {
+        _userCredits.credits_remaining = errData.credits_remaining;
+        _renderCreditBadge();
+      }
+      showErr(errData.message || 'Insufficient credits.');
+      document.getElementById('upgradeCard').style.display = 'block';
+      document.getElementById('upgradeMsg').textContent = errData.message || 'Insufficient credits.';
+      _updateContactLinks(errData.credits_needed || 0);
+      return;
+    }
+
+    if (!respA.ok) throw new Error('Step 1 failed: HTTP ' + respA.status);
+    const initData = await respA.json();
+    const { jobId, gcsUploadPaths, creditsRemaining } = initData;
+    if (!jobId) throw new Error('No job ID returned');
+
+    // Update local credit count after reservation
+    if (_userCredits && creditsRemaining !== undefined) {
+      _userCredits.credits_remaining = creditsRemaining;
+      _renderCreditBadge();
+    }
+
+    setSubmitStep('Uploading ' + uploads.length + ' image(s) to cloud…');
+    await uploadImagesToGCS(uploads, gcsUploadPaths);
+    setSubmitStep('Images uploaded ✓');
+
+    setSubmitStep('Starting generation…');
+    const gcsUris = gcsUploadPaths.map(p => p.gcsUri);
+    const respB = await fetch(WEBHOOK_B, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(Object.assign({}, config, { jobId, gcsUris }))
+    });
+    if (!respB.ok) throw new Error('Step 3 failed: HTTP ' + respB.status);
+    await respB.json();
+
+    setSubmitStep('Submitted ✓');
+    _currentProductName = name;
+    showStatusPanel(jobId, uploads.length * types.length, deliveryEmail, false, name);
+
+  } catch(e) {
+    showErr('Submission failed — ' + e.message);
+    btn.disabled = false;
+    document.getElementById('submitLbl').innerHTML = '✨ Generate Photos';
+    if (user) loadCredits(user.email);
+  }
+}
+
+// Upload all images directly to GCS public bucket (browser PUT)
+async function uploadImagesToGCS(uploadedFiles, gcsUploadPaths) {
+  const promises = uploadedFiles.map(async (u, i) => {
+    const pathInfo = gcsUploadPaths[i];
+    if (!pathInfo) throw new Error('No GCS path for image ' + i);
+    const byteStr = atob(u.base64);
+    const arr     = new Uint8Array(byteStr.length);
+    for (let j=0; j<byteStr.length; j++) arr[j] = byteStr.charCodeAt(j);
+    const blob = new Blob([arr], { type: u.mimeType || 'image/jpeg' });
+    const resp = await fetch(pathInfo.uploadUrl, {
+      method:  'PUT',
+      headers: { 'Content-Type': u.mimeType || 'image/jpeg' },
+      body:    blob
+    });
+    if (!resp.ok) {
+      const txt = await resp.text().catch(()=>'');
+      throw new Error('Image ' + (i+1) + ' upload failed: ' + resp.status + ' ' + txt.slice(0,80));
+    }
+    return { index: i, gcsUri: pathInfo.gcsUri, success: true };
+  });
+  return Promise.all(promises);
+}
+
+function setSubmitStep(msg) {
+  document.getElementById('submitLbl').innerHTML = '<span class="spin"></span> ' + msg;
+}
+function showErr(msg) { document.getElementById('submitErr').textContent=msg; }
+
+// ══ STATUS TRACKER ══════════════════════════════════════════════════
+let _currentJobId = null;
+let _pollTimer    = null;
+const POLL_INTERVAL = 30000;
+
+function showStatusPanel(jobId, totalImages, email, restore=false, productName='') {
+  _currentJobId = jobId;
+  try { localStorage.setItem('vs_active_job', JSON.stringify({ jobId, totalImages, email, productName })); } catch(e) {}
+  // Make sure we're on the batch tab
+  ['batch','jobs'].forEach(n => {
+    document.getElementById('tab-'+n).classList.toggle('active', n==='batch');
+    document.getElementById('page-'+n).classList.toggle('active', n==='batch');
+  });
+  document.getElementById('mainForm').style.display    = 'none';
+  document.getElementById('successPanel').style.display = 'block';
+  document.getElementById('sCount').textContent  = totalImages;
+  document.getElementById('sEmail').textContent  = email;
+  document.getElementById('sJobId').textContent  = 'Job ID: ' + jobId;
+  document.getElementById('dJobId').textContent  = jobId;
+  document.getElementById('detailGrid').style.display = 'grid';
+  const dEmailEl = document.getElementById('dEmail');
+  if (dEmailEl) dEmailEl.textContent = email;
+  // Show "＋ New Job" in tab bar while a job is being tracked
+  document.getElementById('tab-newjob').style.display = 'inline-flex';
+  if (!restore) setStatusChip('pending');
+  addJobToHistory(jobId, totalImages, productName);
+  setTimeout(() => startPolling(), restore ? 0 : 4000);
+}
+
+function startNewJob() {
+  // Clear active job state and go back to the upload form
+  clearInterval(_pollTimer);
+  _currentJobId = null;
+  _currentImages = [];
+  try { localStorage.removeItem('vs_active_job'); } catch(e) {}
+  uploads=[]; avatarId='dynamic'; avatarCountry='india'; locationVariant=''; genMode='dynamic';
+  document.getElementById('thumbGrid').innerHTML = '';
+  document.getElementById('productName').value   = '';
+  document.getElementById('catSel').value        = '';
+  document.getElementById('subSel').innerHTML    = '<option value="">Select subcategory…</option>';
+  if (user) document.getElementById('emailDisp').value = user.email;
+  document.querySelectorAll('.tycb input').forEach(cb=>{cb.checked=true; cb.closest('.tycb').classList.add('on');});
+  setMode('dynamic');
+  document.getElementById('countBanner').classList.add('hidden');
+  document.getElementById('submitLbl').innerHTML = '✨ Generate Photos';
+  document.getElementById('submitErr').textContent = '';
+  document.getElementById('statusChip').className = 'status-chip pending';
+  document.getElementById('progTrack').style.display = 'none';
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('doneSection').style.display = 'none';
+  document.getElementById('failedSection').style.display = 'none';
+  document.getElementById('detailGrid').style.display = 'none';
+  document.getElementById('imageLinks').innerHTML = '';
+  document.getElementById('tab-newjob').style.display = 'none';
+  document.getElementById('mainForm').style.display    = 'block';
+  document.getElementById('successPanel').style.display = 'none';
+  ['batch','jobs'].forEach(n => {
+    document.getElementById('tab-'+n).classList.toggle('active', n==='batch');
+    document.getElementById('page-'+n).classList.toggle('active', n==='batch');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  checkReady();
+}
+
+function startPolling() {
+  clearInterval(_pollTimer);
+  pollStatus();
+  _pollTimer = setInterval(pollStatus, POLL_INTERVAL);
+}
+
+async function pollStatus() {
+  if (!_currentJobId) return;
+  document.getElementById('refreshLabel').textContent = 'Checking…';
+  try {
+    const resp = await fetch(
+      `${SB_URL}/rest/v1/batch_jobs?batch_job_id=eq.${encodeURIComponent(_currentJobId)}&select=*`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
+    );
+    const rows = await resp.json();
+    if (!rows || !rows.length) {
+      document.getElementById('refreshLabel').textContent = 'Job not found';
+      return;
+    }
+    const job = rows[0];
+    applyJobStatus(job);
+    const now = new Date().toLocaleTimeString();
+    document.getElementById('refreshLabel').textContent = 'Updated ' + now;
+  } catch(e) {
+    document.getElementById('refreshLabel').textContent = 'Check failed';
+  }
+}
+
+function applyJobStatus(job) {
+  const status = job.status || 'pending';
+  // Normalise: fn_output writes "completed" / "completed_with_errors", not "done"
+  const isDone   = status === 'completed' || status === 'completed_with_errors' || status === 'done';
+  const isFailed = status === 'failed';
+
+  setStatusChip(status);
+
+  // Detail grid
+  if (job.image_count) document.getElementById('dImages').textContent = job.image_count + ' uploaded';
+  if (job.type_count)  document.getElementById('dTypes').textContent  = job.type_count + ' types → ' + (job.image_count * job.type_count) + ' images';
+  if (job.created_at)  document.getElementById('dCreated').textContent = new Date(job.created_at).toLocaleString();
+
+  const prog = document.getElementById('progTrack');
+  const bar  = document.getElementById('progBar');
+
+  if (isDone) {
+    prog.style.display = 'block';
+    bar.style.width = '100%';
+    clearInterval(_pollTimer);
+    // Clear persisted job — it's done
+    try { localStorage.removeItem('vs_active_job'); } catch(e) {}
+    showDoneSection(job);
+  } else if (isFailed) {
+    prog.style.display = 'none';
+    clearInterval(_pollTimer);
+    try { localStorage.removeItem('vs_active_job'); } catch(e) {}
+    document.getElementById('failedSection').style.display = 'block';
+    updateHistoryRow(job.batch_job_id || _currentJobId, 'failed', []);
+  } else {
+    // pending / running — keep polling
+    prog.style.display = 'block';
+    setTimeout(() => bar.style.width = '65%', 100);
+  }
+
+  if (job.completed_at) {
+    const mins = Math.round((new Date(job.completed_at) - new Date(job.created_at)) / 60000);
+    document.getElementById('statusTime').textContent = `Completed in ${mins} min`;
+  }
+}
+
+function setStatusChip(status) {
+  const chip = document.getElementById('statusChip');
+  const dot  = document.getElementById('pulseDot');
+  const ico  = document.getElementById('statusIco');
+  const txt  = document.getElementById('statusTxt');
+  chip.className = 'status-chip ' + status;
+  const isDone = status === 'completed' || status === 'completed_with_errors' || status === 'done';
+  dot.className  = 'pulse-dot ' + (isDone ? 'done' : status === 'failed' ? 'failed' : '');
+  const map = {
+    pending:                 ['⏳','Pending'],
+    running:                 ['⚙️','Generating'],
+    done:                    ['✅','Complete'],
+    completed:               ['✅','Complete'],
+    completed_with_errors:   ['⚠️','Completed'],
+    failed:                  ['❌','Failed']
+  };
+  [ico.textContent, txt.textContent] = map[status] || ['⏳','Pending'];
+}
+
+function showDoneSection(job) {
+  const section = document.getElementById('doneSection');
+  section.style.display = 'block';
+
+  let images = [];
+  try {
+    const raw = job.output_images || job.oci_image_urls || '[]';
+    images = Array.isArray(raw) ? raw : JSON.parse(raw);
+  } catch(e) {}
+
+  const successImages = images.filter(img => img && (img.public_url || img.url || img.publicUrl || img.ociUrl));
+  document.getElementById('doneCount').textContent = successImages.length;
+  _currentImages = successImages;
+
+  const container = document.getElementById('imageLinks');
+  container.innerHTML = '';
+  const typeLabels = { hero:'Hero', lifestyle1:'Lifestyle 1', lifestyle2:'Lifestyle 2', lifestyle3:'Lifestyle 3' };
+
+  if (successImages.length === 0) {
+    container.innerHTML = '<div style="font-size:.82rem;color:var(--dim)">Images are processing — check back in a moment, or see My Jobs tab.</div>';
+    return;
+  }
+
+  successImages.forEach((img, i) => {
+    const url      = img.public_url || img.publicUrl || img.url || img.ociUrl || '';
+    const shotType = img.shot_type  || img.type || img.shotType || '';
+    const imgIdx   = img.image_index != null ? img.image_index : (img.index != null ? img.index : i);
+    if (!url) return;
+    const pName  = (_currentProductName || 'product').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/ +/g,'_').slice(0,25) || 'product';
+    const imgNum = img.image_num || img.imageNum || (parseInt(imgIdx)+1);
+    const fname  = `${pName}_${shotType||'img'}${imgNum > 1 ? '_img'+imgNum : ''}.jpg`;
+    const label  = `${typeLabels[shotType] || (shotType ? shotType : 'Image '+(parseInt(imgIdx)+1))}`;
+    const row = document.createElement('div');
+    row.className = 'img-link';
+    row.innerHTML = `<div><div class="img-link-label">${label}</div><div class="img-link-sub">${url.split('/').pop()}</div></div>`
+      + `<button class="dl-btn" onclick="blobDownload('${url}','${fname}',this)">⬇ Download</button>`;
+    container.appendChild(row);
+  });
+
+  // Update the history row to completed
+  updateHistoryRow(job.batch_job_id || _currentJobId, job.status || 'completed', successImages);
+}
+
+function resetAll() { startNewJob(); }
+function _resetAll_unused() {
+  clearInterval(_pollTimer);
+  _currentJobId = null;
+  _currentImages = [];
+  // _jobHistory intentionally NOT cleared — survives New Job clicks
+  try { localStorage.removeItem('vs_active_job'); } catch(e) {}
+  uploads=[]; avatarId='dynamic'; avatarCountry='india'; locationVariant=''; genMode='dynamic';
+  document.getElementById('thumbGrid').innerHTML = '';
+  document.getElementById('productName').value   = '';
+  document.getElementById('catSel').value        = '';
+  document.getElementById('subSel').innerHTML    = '<option value="">Select subcategory…</option>';
+  // Restore delivery email to logged-in user's email
+  if (user) document.getElementById('emailDisp').value = user.email;
+  document.querySelectorAll('.tycb input').forEach(cb=>{cb.checked=true; cb.closest('.tycb').classList.add('on');});
+  setMode('dynamic');
+  document.getElementById('countBanner').classList.add('hidden');
+  document.getElementById('mainForm').style.display    = 'block';
+  document.getElementById('successPanel').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('submitLbl').innerHTML = '✨ Generate Photos';
+  document.getElementById('submitErr').textContent = '';
+  document.getElementById('statusChip').className = 'status-chip pending';
+  document.getElementById('progTrack').style.display = 'none';
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('doneSection').style.display = 'none';
+  document.getElementById('failedSection').style.display = 'none';
+  document.getElementById('detailGrid').style.display = 'none';
+  document.getElementById('imageLinks').innerHTML = '';
+  checkReady();
+}
+
+// ══ BLOB DOWNLOAD ════════════════════════════════════════════════════
+let _currentImages = [];
+let _currentProductName = '';
+
+async function blobDownload(url, fname, btnEl) {
+  if (btnEl) { btnEl.textContent = '⏳'; btnEl.disabled = true; }
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    const burl = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = burl; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(burl), 5000);
+    if (btnEl) { btnEl.textContent = '✓ Saved'; btnEl.style.background = '#059669'; }
+  } catch(e) {
+    if (btnEl) { btnEl.textContent = '⬇ Download'; btnEl.disabled = false; }
+    toast('Download failed — ' + e.message);
+  }
+}
+
+function downloadAllCurrent() {
+  if (!_currentImages.length) { toast('No images ready'); return; }
+  openFeedback(_currentImages, _currentJobId || 'job');
+}
+
+function _blobQueue(images, jobSuffix) {
+  const valid = images.filter(img => img.public_url || img.publicUrl || img.url || img.ociUrl);
+  if (!valid.length) { toast('No images to download'); return; }
+  toast(`Downloading ${valid.length} images…`);
+  let i = 0;
+  async function next() {
+    if (i >= valid.length) { toast(`${valid.length} downloads complete ✓`, 4000); return; }
+    const img = valid[i];
+    const url = img.public_url || img.publicUrl || img.url || img.ociUrl || '';
+    const shotType = img.shot_type || img.type || img.shotType || '';
+    const imgIdx   = img.image_index != null ? img.image_index : i;
+    const pName2   = (img.product_name || img.productName || _currentProductName || 'product').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/ +/g,'_').slice(0,25) || 'product';
+    const imgNum2  = img.image_num || img.imageNum || (parseInt(imgIdx)+1);
+    const fname    = `${pName2}_${shotType||'img'}${imgNum2 > 1 ? '_img'+imgNum2 : ''}.jpg`;
+    try {
+      const r = await fetch(url); const blob = await r.blob();
+      const burl = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = burl; a.download = fname;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(burl), 5000);
+    } catch(e) { console.warn('dl failed', url, e); }
+    i++; setTimeout(next, 500);
+  }
+  next();
+}
+
+// ══ JOB HISTORY ══════════════════════════════════════════════════════
+let _jobHistory = [];
+
+function addJobToHistory(jobId, totalImages, productName) {
+  if (_jobHistory.find(j => j.jobId === jobId)) return;
+  _jobHistory.unshift({ jobId, productName: productName||'—', totalImages, submittedAt: new Date(), status: 'pending', images: [] });
+  _renderJobHistory();
+}
+
+function updateHistoryRow(jobId, status, images) {
+  const e = _jobHistory.find(j => j.jobId === jobId);
+  if (!e) return;
+  e.status = status;
+  if (images && images.length) e.images = images;
+  _renderJobHistory();
+}
+
+function _renderJobHistory() {
+  if (!_jobHistory.length) return;
+  document.getElementById('jobHistWrap').style.display = 'block';
+  document.getElementById('jobHistCount').textContent = _jobHistory.length;
+  const body = document.getElementById('jobHistBody');
+  body.innerHTML = '';
+  const statusLabel = { pending:'⏳ Pending', running:'⚙️ Running', completed:'✅ Done',
+    completed_with_errors:'✅ Done', done:'✅ Done', failed:'❌ Failed' };
+  const chipCls = s => ['completed','completed_with_errors','done'].includes(s) ? 'completed' : s;
+  _jobHistory.forEach(j => {
+    const hasDl = ['completed','completed_with_errors','done'].includes(j.status) && j.images.length;
+    const time  = j.submittedAt ? j.submittedAt.toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td><span class="jhist-jid">${j.jobId.slice(-14)}</span></td>`
+    + `<td style="font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${j.productName}">${j.productName}</td>`
+    + `<td>${j.totalImages}</td>`
+    + `<td style="white-space:nowrap;font-size:.73rem">${time}</td>`
+    + `<td><span class="jhist-chip ${chipCls(j.status)}">${statusLabel[j.status]||j.status}</span></td>`
+    + `<td><button class="jhist-dl" ${hasDl?'':'disabled'} onclick="_blobQueue(_jobHistory.find(x=>x.jobId==='${j.jobId}').images,'${j.jobId}')">⬇ All</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ══ SHOWCASE SLIDER ══════════════════════════════════════════════════
+let _sliderIdx  = 0;
+let _sliderTotal = 0;
+let _sliderTimer = null;
+const SLIDER_AUTO_MS = 4000;
+
+function _initSlider() {
+  const track = document.getElementById('sliderTrack');
+  const dots  = document.getElementById('sliderDots');
+  if (!track || !dots) return;
+  _sliderTotal = track.children.length;
+  dots.innerHTML = '';
+  for (let i = 0; i < _sliderTotal; i++) {
+    const d = document.createElement('button');
+    d.className = 'slider-dot' + (i === 0 ? ' on' : '');
+    d.onclick = () => sliderGoTo(i);
+    dots.appendChild(d);
+  }
+  _sliderRender();
+  _sliderStartAuto();
+}
+
+function _sliderRender() {
+  const track = document.getElementById('sliderTrack');
+  if (track) track.style.transform = `translateX(-${_sliderIdx * 100}%)`;
+  document.querySelectorAll('.slider-dot').forEach((d, i) => {
+    d.classList.toggle('on', i === _sliderIdx);
+  });
+}
+
+function sliderMove(dir) {
+  _sliderIdx = (_sliderIdx + dir + _sliderTotal) % _sliderTotal;
+  _sliderRender();
+  _sliderRestartAuto();
+}
+
+function sliderGoTo(idx) {
+  _sliderIdx = idx;
+  _sliderRender();
+  _sliderRestartAuto();
+}
+
+function _sliderStartAuto() {
+  clearInterval(_sliderTimer);
+  _sliderTimer = setInterval(() => sliderMove(1), SLIDER_AUTO_MS);
+}
+
+function _sliderRestartAuto() {
+  clearInterval(_sliderTimer);
+  _sliderTimer = setInterval(() => sliderMove(1), SLIDER_AUTO_MS);
+}
+
+// Init on DOM ready
+document.addEventListener('DOMContentLoaded', _initSlider);
+
+// ══ CREDITS ══════════════════════════════════════════════════════════
+
+async function loadCredits(email) {
+  try {
+    const resp = await fetch(
+      `${SB_URL}/rest/v1/user_credits?user_email=eq.${encodeURIComponent(email)}&select=*`,
+      { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } }
+    );
+    const rows = await resp.json();
+    if (rows && rows.length) {
+      _userCredits = rows[0];
+    } else {
+      // No row yet — show 20 optimistically, fn_init creates it on first job
+      _userCredits = { credits_remaining: 20, credits_reserved: 0, plan_name: 'free', expires_at: null };
+    }
+    _renderCreditBadge();
+    checkReady();
+  } catch(e) {
+    console.warn('loadCredits failed:', e);
+  }
+}
+
+function _renderCreditBadge() {
+  if (!user || !_userCredits) return;
+  const rem   = _userCredits.credits_remaining || 0;
+  const badge = document.getElementById('creditBadge');
+  const count = document.getElementById('creditCount');
+  const infoRow = document.getElementById('creditInfoRow');
+  const infoVal = document.getElementById('creditInfoVal');
+  const mc    = document.getElementById('modalCreditCount');
+
+  badge.style.display = 'inline-flex';
+  count.textContent   = rem + ' credits';
+  badge.className = 'credit-badge' + (rem === 0 ? ' empty' : rem <= 5 ? ' low' : '');
+
+  infoRow.style.display = 'flex';
+  infoVal.textContent   = rem + ' credit' + (rem !== 1 ? 's' : '') + ' remaining';
+  infoVal.className = 'cr-val' + (rem === 0 ? ' danger' : rem <= 5 ? ' warn' : '');
+
+  if (mc) mc.textContent = rem + ' credits';
+}
+
+function _updateContactLinks(creditsNeeded) {
+  const email  = user ? user.email : '';
+  const waMsg  = encodeURIComponent(`Hi VinSnap, I want to buy credits.\nAccount: ${email}\nI need at least ${creditsNeeded} credits.`);
+  const eSub   = encodeURIComponent('VinSnap Credits Request');
+  const eBody  = encodeURIComponent(`Hi,\n\nI'd like to buy credits for my VinSnap account.\nEmail: ${email}\nCredits needed: ${creditsNeeded}\n\nPlease advise.\n\nThank you.`);
+  const waUrl  = `https://wa.me/919841536868?text=${waMsg}`;
+  const emUrl  = `mailto:vinmediaai@gmail.com?subject=${eSub}&body=${eBody}`;
+  ['upgradeWaBtn','modalWaBtn'].forEach(id => { const el=document.getElementById(id); if(el) el.href=waUrl; });
+  ['upgradeEmailBtn','modalEmailBtn'].forEach(id => { const el=document.getElementById(id); if(el) el.href=emUrl; });
+}
+
+function openUpgradeModal() {
+  _updateContactLinks(0);
+  _renderCreditBadge();
+  document.getElementById('upgradeModal').classList.add('open');
+}
+function closeUpgradeModal() {
+  document.getElementById('upgradeModal').classList.remove('open');
+}
+
+function toggleInlinePlans() {
+  const wrap = document.getElementById('inlinePlansWrap');
+  const btn  = document.getElementById('plansToggleBtn');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  btn.textContent    = open ? '▲ Hide plans' : '▼ View pricing plans';
+}
+
+// ══ TOAST ════════════════════════════════════════════════════════════
+let _tt;
+function toast(msg, dur=3000) {
+  const el = document.getElementById('toastEl');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'), dur);
+}
+
+// ══ TABS ═════════════════════════════════════════════════════════════
+function switchTab(t) {
+  ['batch','jobs'].forEach(n => {
+    document.getElementById('tab-'+n).classList.toggle('active', n===t);
+    document.getElementById('page-'+n).classList.toggle('active', n===t);
+  });
+  if (t === 'jobs') {
+    loadJobs();
+  } else if (t === 'batch') {
+    // Restore correct sub-panel: status tracker if job active, upload form otherwise
+    const hasActiveJob = !!_currentJobId;
+    document.getElementById('mainForm').style.display     = hasActiveJob ? 'none'  : 'block';
+    document.getElementById('successPanel').style.display = hasActiveJob ? 'block' : 'none';
+    if (hasActiveJob) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ══ JOBS PAGE ════════════════════════════════════════════════════════
+var _jPoll = null;
+var _jExp  = {};
+
+function loadJobs() {
+  if (!user) {
+    document.getElementById('jList').innerHTML = '<div class="j-empty"><div style="font-size:2rem;margin-bottom:8px">&#128274;</div><div style="font-weight:700">Sign in to view your jobs</div></div>';
+    document.getElementById('jLoading').style.display = 'none';
+    return;
+  }
+  document.getElementById('jRefIco').innerHTML = '&#8987;';
+  document.getElementById('jLoading').style.display = 'block';
+  document.getElementById('jList').innerHTML = '';
+  document.getElementById('jEmpty').style.display = 'none';
+
+  fetch(SB_URL + '/rest/v1/batch_jobs?user_email=eq.' + encodeURIComponent(user.email)
+        + '&order=created_at.desc&limit=100',
+    { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } })
+  .then(r => r.json())
+  .then(jobs => {
+    document.getElementById('jLoading').style.display = 'none';
+    document.getElementById('jRefIco').innerHTML = '&#128260;';
+    if (!Array.isArray(jobs) || jobs.length === 0) {
+      document.getElementById('jEmpty').style.display = 'block';
+      document.getElementById('jCount').textContent = '';
+      return;
+    }
+    document.getElementById('jCount').textContent = jobs.length + ' job' + (jobs.length !== 1 ? 's' : '');
+    document.getElementById('jList').innerHTML = jobs.map(renderJob).join('');
+    Object.keys(_jExp).forEach(id => {
+      const el = document.getElementById('jimgs-'+id);
+      if (el && _jExp[id]) el.style.display = 'block';
+    });
+    const hasActive = jobs.some(j => j.status === 'pending' || j.status === 'running');
+    clearInterval(_jPoll);
+    if (hasActive) _jPoll = setInterval(loadJobs, 20000);
+  })
+  .catch(e => {
+    document.getElementById('jLoading').style.display = 'none';
+    document.getElementById('jRefIco').innerHTML = '&#128260;';
+    document.getElementById('jList').innerHTML = '<div style="color:var(--red);padding:20px;font-size:.84rem">Failed to load jobs: ' + e.message + '</div>';
+  });
+}
+
+function renderJob(job) {
+  const status   = job.status || 'pending';
+  const jobId    = job.batch_job_id || job.id || '';
+  const name     = job.product_name || job.productName || job.product || 'Untitled';
+  const cat      = (job.category || '').replace(/_/g,' ');
+  const subcat   = (job.subcategory || '').replace(/_/g,' ');
+  const imgCount = job.output_image_count || 0;
+  const created  = job.created_at ? new Date(job.created_at).toLocaleString() : '--';
+  const isDone   = status === 'completed' || status === 'completed_with_errors' || status === 'done';
+  const isActive = status === 'pending' || status === 'running';
+  const isExp    = !!_jExp[jobId];
+
+  const chipIco = {pending:'&#9203;',running:'&#9881;',completed:'&#9989;',completed_with_errors:'&#9888;',done:'&#9989;',failed:'&#10060;'}[status] || '';
+  const chipLbl = {pending:'Pending',running:'Generating',completed:'Completed',completed_with_errors:'Completed',done:'Completed',failed:'Failed'}[status] || status;
+  const progPct = {pending:10,running:55,completed:100,completed_with_errors:100,done:100,failed:100}[status] || 0;
+  const progClr = status==='failed' ? 'background:#dc2626' : isDone ? 'background:#059669' : '';
+
+  let dur = '';
+  if (job.created_at && job.completed_at) {
+    const mins = Math.round((new Date(job.completed_at) - new Date(job.created_at)) / 60000);
+    dur = '<span>&#9889; ' + mins + 'min</span>';
+  }
+
+  let images = [];
+  try { images = Array.isArray(job.output_images) ? job.output_images : JSON.parse(job.output_images || '[]'); } catch(e) {}
+
+  let tiles = '';
+  images.forEach((img, i) => {
+    const url = img.public_url || img.publicUrl || img.url || '';
+    if (!url) return;
+    const su = jEsc(url);
+    const sType  = img.shot_type || img.shotType || img.type || '';
+    const sNum   = img.image_num || img.imageNum || (i+1);
+    const SLBL   = {hero:'Hero',lifestyle1:'Lifestyle 1',lifestyle2:'Lifestyle 2',lifestyle3:'Lifestyle 3'};
+    const tLabel = SLBL[sType] || (sType ? sType : 'Image ' + (i+1));
+    const pn     = (name||'product').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/ +/g,'_').slice(0,25);
+    const dlName = pn + '_' + (sType||'img') + (sNum > 1 ? '_img'+sNum : '') + '.jpg';
+    tiles += '<div class="jtile">'
+      + '<img class="jtile-img" src="' + su + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+      + '<div class="jtile-ph">&#128444;</div>'
+      + '<div class="jtile-foot"><span class="jtile-lbl">' + tLabel + '</span>'
+      + '<a class="j-save" href="' + su + '" download="' + dlName + '" data-shot="' + sType + '" data-num="' + sNum + '" target="_blank">&#11015; Save</a>'
+      + '</div></div>';
+  });
+
+  let imgsSection = '';
+  if (isDone && images.length > 0) {
+    imgsSection = '<div class="jimgs" id="jimgs-' + jobId + '" style="display:' + (isExp ? 'block' : 'none') + '">'
+      + '<div class="jimgs-hdr"><span class="jimgs-title">&#128444; ' + images.length + ' image' + (images.length!==1?'s':'') + ' ready</span>'
+      + '<button class="j-dlall" onclick="jDlAll(\'' + jobId + '\',event)">&#11015; Download All (' + images.length + ')</button></div>'
+      + '<div class="jgrid">' + tiles + '</div></div>';
+  }
+
+  let footer = '';
+  if (isDone && images.length > 0) {
+    footer = '<button class="j-toggle" onclick="jToggle(\'' + jobId + '\')">'
+      + '<span id="jico-' + jobId + '">' + (isExp ? '&#9650;' : '&#9660;') + '</span>'
+      + '&nbsp;' + (isExp ? 'Hide images' : 'View ' + images.length + ' image' + (images.length!==1?'s':'')) + '</button>';
+  } else if (isDone) {
+    footer = '<span style="font-size:.78rem;color:var(--dim)">Images processing&hellip;</span>';
+  } else if (isActive) {
+    footer = '<span style="font-size:.78rem;color:var(--dim)">&#128337; Refreshes every 20s</span>';
+  } else if (status === 'failed') {
+    footer = '<span style="font-size:.78rem;color:var(--red)">&#10060; Failed &mdash; please resubmit</span>';
+  }
+
+  const completedRow = job.completed_at
+    ? '<div class="jditem"><span class="jdlbl">Completed</span><span class="jdval">' + new Date(job.completed_at).toLocaleTimeString() + '</span></div>'
+    : '';
+
+  return '<div class="jcard"><div class="jcard-top"><div class="jcard-info">'
+    + '<div class="jcard-name">' + jEsc(name) + '</div>'
+    + '<div class="jcard-meta">' + (cat ? '<span>&#128230; ' + jEsc(cat) + (subcat ? ' &rsaquo; ' + jEsc(subcat) : '') + '</span>' : '')
+    + '<span>&#128336; ' + created + '</span>' + dur + '</div>'
+    + '<div class="jcard-id">' + jEsc(jobId) + '</div></div>'
+    + '<div class="jchip jchip-' + status + '">' + (isActive ? '<span class="jdot"></span>' : '') + chipIco + ' ' + chipLbl + '</div>'
+    + '</div>'
+    + '<div class="jprog"><div class="jprog-bar" style="width:' + progPct + '%;' + progClr + '"></div></div>'
+    + '<div class="jdetails">'
+    + '<div class="jditem"><span class="jdlbl">Uploaded</span><span class="jdval">' + (job.image_count || '--') + '</span></div>'
+    + '<div class="jditem"><span class="jdlbl">Shot Types</span><span class="jdval">' + (job.type_count || '--') + '</span></div>'
+    + '<div class="jditem"><span class="jdlbl">Generated</span><span class="jdval">' + (isDone ? imgCount : '--') + '</span></div>'
+    + completedRow + '</div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' + footer + '</div>'
+    + imgsSection + '</div>';
+}
+
+function jToggle(jobId) {
+  const el  = document.getElementById('jimgs-' + jobId);
+  const ico = document.getElementById('jico-' + jobId);
+  if (!el) return;
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  _jExp[jobId] = open;
+  if (ico) ico.innerHTML = open ? '&#9650;' : '&#9660;';
+}
+
+function jDlAll(jobId, e) {
+  if (e) e.preventDefault();
+  const el = document.getElementById('jimgs-' + jobId);
+  if (!el) return;
+  // Use stored images data with shot_type if available
+  const jEntry = Object.values(_jExp).length >= 0 && window._jImgCache && window._jImgCache[jobId];
+  const jCard  = el.closest('.jcard');
+  const jName  = jCard ? (jCard.querySelector('.jcard-name')?.textContent || 'product') : 'product';
+  const links  = el.querySelectorAll('.j-save');
+  const imgs   = Array.from(links).map((a, i) => ({
+    public_url:   a.href,
+    image_index:  i,
+    shot_type:    a.dataset.shot || '',
+    image_num:    parseInt(a.dataset.num || '1'),
+    product_name: jName,
+  }));
+  openFeedback(imgs, jobId);
+}
+
+function jEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+// ══ FEEDBACK ═════════════════════════════════════════════════════════
+let _fbRating       = 0;
+let _fbPendingQueue = null;
+let _fbJobId        = null;
+
+function openFeedback(images, jobSuffix) {
+  _fbPendingQueue = { images, jobSuffix };
+  _fbJobId        = jobSuffix;
+  _fbRating       = 0;
+  document.getElementById('fbForm').style.display   = 'block';
+  document.getElementById('fbThanks').style.display = 'none';
+  document.getElementById('fbText').value           = '';
+  document.getElementById('fbStarLbl').textContent  = '';
+  document.getElementById('fbSubmitBtn').disabled   = false;
+  document.getElementById('fbSubmitBtn').textContent = 'Submit Feedback';
+  document.querySelectorAll('.fb-star').forEach(s => s.classList.remove('on'));
+  document.getElementById('fbOverlay').classList.add('open');
+}
+
+function closeFeedback() {
+  document.getElementById('fbOverlay').classList.remove('open');
+}
+
+function setRating(val) {
+  _fbRating = val;
+  const labels = ['','😞 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Excellent!'];
+  document.getElementById('fbStarLbl').textContent = labels[val] || '';
+  document.querySelectorAll('.fb-star').forEach(s => {
+    s.classList.toggle('on', parseInt(s.dataset.v) <= val);
+  });
+}
+
+async function submitFeedback() {
+  const text = document.getElementById('fbText').value.trim();
+  const btn  = document.getElementById('fbSubmitBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+  try {
+    await fetch(`${SB_URL}/rest/v1/job_feedback`, {
+      method:  'POST',
+      headers: {
+        'apikey':        SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal',
+      },
+      body: JSON.stringify({
+        job_id:     _fbJobId   || null,
+        user_email: user ? user.email : null,
+        rating:     _fbRating  || null,
+        feedback:   text       || null,
+      })
+    });
+  } catch(e) {
+    console.warn('Feedback save failed:', e);
+  }
+  document.getElementById('fbForm').style.display   = 'none';
+  document.getElementById('fbThanks').style.display = 'block';
+  setTimeout(() => {
+    closeFeedback();
+    if (_fbPendingQueue) {
+      _blobQueue(_fbPendingQueue.images, _fbPendingQueue.jobSuffix);
+      _fbPendingQueue = null;
+    }
+  }, 1800);
+}
+
+function skipFeedback() {
+  closeFeedback();
+  if (_fbPendingQueue) {
+    _blobQueue(_fbPendingQueue.images, _fbPendingQueue.jobSuffix);
+    _fbPendingQueue = null;
+  }
+}
+
+</script>
+<!-- ── FEEDBACK MODAL ── -->
+<div class="fb-overlay" id="fbOverlay">
+  <div class="fb-card">
+    <button class="fb-close" onclick="closeFeedback()">✕</button>
+
+    <div id="fbForm">
+      <div class="fb-header">
+        <div class="fb-ico">📸</div>
+        <div class="fb-title">We hear you!</div>
+        <div class="fb-sub">Your feedback helps us improve VinSnap for every seller. Takes 30 seconds.</div>
+      </div>
+
+      <div class="fb-section">
+        <span class="fb-lbl">⭐ Are you satisfied with the photos?</span>
+        <div class="fb-stars" id="fbStars">
+          <span class="fb-star" data-v="1" onclick="setRating(1)">★</span>
+          <span class="fb-star" data-v="2" onclick="setRating(2)">★</span>
+          <span class="fb-star" data-v="3" onclick="setRating(3)">★</span>
+          <span class="fb-star" data-v="4" onclick="setRating(4)">★</span>
+          <span class="fb-star" data-v="5" onclick="setRating(5)">★</span>
+        </div>
+        <div class="fb-star-lbl" id="fbStarLbl"></div>
+      </div>
+
+      <div class="fb-section">
+        <span class="fb-lbl">💬 Any suggestions for improvement?</span>
+        <textarea class="fb-textarea" id="fbText" placeholder="Tell us what you loved or what we can do better…" maxlength="1000"></textarea>
+      </div>
+
+      <button class="fb-submit" id="fbSubmitBtn" onclick="submitFeedback()">Submit Feedback</button>
+      <button class="fb-skip" onclick="skipFeedback()">Skip and download</button>
+    </div>
+
+    <div class="fb-thanks" id="fbThanks">
+      <div class="fb-thanks-ico">🎉</div>
+      <div class="fb-thanks-title">Thank you!</div>
+      <div class="fb-thanks-sub">Your feedback means a lot. Downloading your photos now…</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
