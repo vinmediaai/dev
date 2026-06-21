@@ -6,6 +6,7 @@
 <title>VinSnap — AI Product Photography</title>
 <link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -151,6 +152,22 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .mmsg.err{color:var(--red)}
 .mswitch{font-size:.82rem;color:var(--dim);margin-top:14px;text-align:center}
 .mswitch a{color:var(--accent);cursor:pointer;font-weight:600}
+.auth-tabs{display:flex;gap:6px;background:var(--card2);border-radius:var(--rx);padding:4px;margin-bottom:18px}
+.auth-tab{flex:1;text-align:center;padding:8px;border-radius:6px;font-size:.85rem;font-weight:700;color:var(--dim);cursor:pointer;transition:.2s;background:none;border:none;font-family:'Outfit',sans-serif}
+.auth-tab.on{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.auth-view{display:none}
+.auth-view.on{display:block}
+.tsWidget{margin:4px 0 14px;display:flex;justify-content:center;min-height:65px}
+.otp-input{width:100%;padding:14px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:.5em;text-align:center;margin-bottom:10px;outline:none;transition:.2s}
+.otp-input:focus{border-color:var(--accent)}
+.otp-sub{font-size:.82rem;color:var(--dim);margin-bottom:16px;line-height:1.5;text-align:center}
+.otp-sub strong{color:var(--text)}
+.resend-row{font-size:.8rem;color:var(--dim);margin-top:14px;text-align:center}
+.resend-row a{color:var(--accent);cursor:pointer;font-weight:600}
+.resend-row a.disabled{color:var(--dim);cursor:default;pointer-events:none}
+.mbtn:disabled{opacity:.55;cursor:not-allowed}
+.mback{background:none;border:none;color:var(--dim);font-family:'Outfit',sans-serif;font-size:.82rem;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:14px;padding:0}
+.mback:hover{color:var(--accent)}
 
 /* toast */
 .toast-el{position:fixed;bottom:24px;right:24px;background:#1a1d2e;color:#fff;padding:12px 20px;border-radius:var(--rx);font-size:.82rem;font-weight:600;z-index:9999;transform:translateY(100px);opacity:0;transition:.3s;max-width:300px}
@@ -202,35 +219,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .jhist-jid{font-family:monospace;font-size:.68rem;color:var(--dim)}
 .jhist-dl{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:var(--rx);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.7rem;font-weight:700;border:none;cursor:pointer}
 .jhist-dl:disabled{opacity:.35;cursor:not-allowed}
-/* ── FEEDBACK MODAL ── */
-.fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(5px);z-index:2000;display:none;align-items:center;justify-content:center}
-.fb-overlay.open{display:flex}
-.fb-card{background:#fff;border-radius:20px;padding:32px 28px;width:min(460px,94vw);position:relative;box-shadow:0 24px 60px rgba(0,0,0,.2);animation:fbIn .3s ease}
-@keyframes fbIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.fb-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--dim);line-height:1}
-.fb-header{text-align:center;margin-bottom:22px}
-.fb-ico{font-size:2.4rem;margin-bottom:8px}
-.fb-title{font-size:1.15rem;font-weight:800;color:var(--text);margin-bottom:4px}
-.fb-sub{font-size:.84rem;color:var(--dim);line-height:1.5}
-.fb-section{margin-bottom:18px}
-.fb-lbl{font-size:.8rem;font-weight:700;color:var(--dim2);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:.04em}
-.fb-stars{display:flex;gap:8px;justify-content:center;margin-bottom:4px}
-.fb-star{font-size:2rem;cursor:pointer;transition:.15s;opacity:.3;line-height:1;user-select:none}
-.fb-star.on{opacity:1;transform:scale(1.12)}
-.fb-star-lbl{text-align:center;font-size:.78rem;color:var(--dim);height:18px;margin-top:2px}
-.fb-textarea{width:100%;padding:11px 14px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:'Outfit',sans-serif;font-size:.87rem;color:var(--text);resize:vertical;min-height:90px;outline:none;transition:.2s;background:#fafbff}
-.fb-textarea:focus{border-color:var(--accent);background:#fff}
-.fb-textarea::placeholder{color:#aab0c4}
-.fb-submit{width:100%;padding:13px;border-radius:var(--rx);border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
-.fb-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.3)}
-.fb-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.fb-skip{display:block;text-align:center;margin-top:12px;font-size:.8rem;color:var(--dim);cursor:pointer;background:none;border:none;font-family:'Outfit',sans-serif;width:100%;padding:4px}
-.fb-skip:hover{color:var(--accent);text-decoration:underline}
-.fb-thanks{text-align:center;padding:20px 0 10px;display:none}
-.fb-thanks-ico{font-size:2.5rem;margin-bottom:10px}
-.fb-thanks-title{font-size:1.1rem;font-weight:800;color:var(--green);margin-bottom:6px}
-.fb-thanks-sub{font-size:.84rem;color:var(--dim)}
-
 /* image slider */
 .slider-section{background:linear-gradient(135deg,#0f0f1a,#1a1030);padding:48px 0 56px;margin:0}
 .slider-inner{max-width:860px;margin:0 auto;padding:0 20px}
@@ -1112,12 +1100,36 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="moverlay" id="authModal">
   <div class="mcrd">
     <button class="mxbtn" onclick="closeModal()">✕</button>
-    <div class="mtitle">Sign in to VinSnap</div>
-    <input class="minp" id="liEmail" type="email" placeholder="Email address" autocomplete="email">
-    <input class="minp" id="liPass" type="password" placeholder="Password" autocomplete="current-password">
-    <button class="mbtn" onclick="doSignIn()">Sign In</button>
-    <div class="mmsg" id="liMsg"></div>
-    <div class="mswitch">New to VinSnap? <a onclick="showSignupNote()">Sign up</a></div>
+
+    <!-- VIEW: Sign In / Create Account tabs -->
+    <div class="auth-view on" id="view-credentials">
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="tabSignIn" onclick="switchAuthMode('signin')">Sign In</button>
+        <button class="auth-tab" id="tabSignUp" onclick="switchAuthMode('signup')">Create Account</button>
+      </div>
+
+      <div class="mtitle" id="credTitle" style="margin-bottom:14px">Sign in to VinSnap</div>
+      <input class="minp" id="liEmail" type="email" placeholder="Email address" autocomplete="email">
+      <input class="minp" id="liPass" type="password" placeholder="Password" autocomplete="current-password">
+
+      <!-- Turnstile renders here, signup mode only -->
+      <div class="tsWidget" id="tsWidget" style="display:none"></div>
+
+      <button class="mbtn" id="credBtn" onclick="doSignIn()">Sign In</button>
+      <div class="mmsg" id="liMsg"></div>
+    </div>
+
+    <!-- VIEW: Verify OTP code -->
+    <div class="auth-view" id="view-verify">
+      <button class="mback" onclick="switchAuthMode('signup')">← Back</button>
+      <div class="mtitle">Verify your email</div>
+      <div class="otp-sub">Enter the 6-digit code sent to<br><strong id="verifyEmailLbl"></strong></div>
+      <input class="otp-input" id="otpCode" type="text" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code">
+      <button class="mbtn" id="verifyBtn" onclick="doVerifyOtp()">Verify &amp; Continue</button>
+      <div class="mmsg" id="verifyMsg"></div>
+      <div class="resend-row">Didn't get a code? <a id="resendLink" onclick="doResendCode()">Resend code</a></div>
+    </div>
+
   </div>
 </div>
 
@@ -1166,6 +1178,7 @@ const SB_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 const WEBHOOK_A  = 'https://vinsnap-init-gdsqg4fv7q-uc.a.run.app/';
 const WEBHOOK_B  = 'https://vinsnap-process-gdsqg4fv7q-uc.a.run.app/';
 const GCS_BUCKET = 'vinsnap-store';
+const TURNSTILE_SITE_KEY = 'YOUR_TURNSTILE_SITE_KEY'; // ← replace with the Site Key from Cloudflare Turnstile dashboard
 const { createClient } = window.supabase;
 const sb = createClient(SB_URL, SB_KEY);
 
@@ -1510,6 +1523,58 @@ sb.auth.onAuthStateChange((_e, session) => {
   }
   checkReady();
 });
+// ══ AUTH: state ══════════════════════════════════════════════════════
+let _authMode       = 'signin';   // 'signin' | 'signup'
+let _tsWidgetId     = null;       // Turnstile widget instance id
+let _tsToken        = '';         // current Turnstile token
+let _pendingEmail   = '';         // email awaiting OTP verification
+let _resendCooldown = null;
+
+// ── Turnstile render/reset ──────────────────────────────────────────
+function _renderTurnstile() {
+  if (!window.turnstile) { setTimeout(_renderTurnstile, 300); return; } // script still loading
+  const el = document.getElementById('tsWidget');
+  if (_tsWidgetId !== null) { turnstile.reset(_tsWidgetId); return; }
+  _tsWidgetId = turnstile.render(el, {
+    sitekey: TURNSTILE_SITE_KEY,
+    callback: (token) => { _tsToken = token; },
+    'expired-callback': () => { _tsToken = ''; },
+    'error-callback': () => { _tsToken = ''; }
+  });
+}
+function _resetTurnstile() {
+  _tsToken = '';
+  if (_tsWidgetId !== null && window.turnstile) turnstile.reset(_tsWidgetId);
+}
+
+// ── Tab / view switching ────────────────────────────────────────────
+function switchAuthMode(mode) {
+  _authMode = mode;
+  document.getElementById('view-credentials').classList.add('on');
+  document.getElementById('view-verify').classList.remove('on');
+  document.getElementById('tabSignIn').classList.toggle('on', mode==='signin');
+  document.getElementById('tabSignUp').classList.toggle('on', mode==='signup');
+  document.getElementById('credTitle').textContent = mode==='signin' ? 'Sign in to VinSnap' : 'Create your VinSnap account';
+  document.getElementById('credBtn').textContent   = mode==='signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('credBtn').onclick       = mode==='signin' ? doSignIn : doSignUp;
+  document.getElementById('liPass').autocomplete   = mode==='signin' ? 'current-password' : 'new-password';
+  document.getElementById('tsWidget').style.display = mode==='signup' ? 'flex' : 'none';
+  liMsg('', '');
+  if (mode === 'signup') _renderTurnstile(); else _resetTurnstile();
+}
+
+function _showVerifyView(email) {
+  _pendingEmail = email;
+  document.getElementById('view-credentials').classList.remove('on');
+  document.getElementById('view-verify').classList.add('on');
+  document.getElementById('verifyEmailLbl').textContent = email;
+  document.getElementById('otpCode').value = '';
+  verifyMsg('', '');
+  _startResendCooldown(45);
+  setTimeout(() => document.getElementById('otpCode').focus(), 100);
+}
+
+// ── Sign in (existing flow, unchanged) ──────────────────────────────
 async function doSignIn() {
   const email = document.getElementById('liEmail').value.trim();
   const pass  = document.getElementById('liPass').value;
@@ -1517,11 +1582,93 @@ async function doSignIn() {
   const {error} = await sb.auth.signInWithPassword({email, password:pass});
   if (error) liMsg(error.message,'err');
 }
+
+// ── Sign up: email + password + Turnstile → triggers OTP email ─────
+async function doSignUp() {
+  const email = document.getElementById('liEmail').value.trim();
+  const pass  = document.getElementById('liPass').value;
+  if (!email || !pass) { liMsg('Please fill in all fields.','err'); return; }
+  if (pass.length < 6) { liMsg('Password must be at least 6 characters.','err'); return; }
+  if (!_tsToken) { liMsg('Please complete the verification check.','err'); return; }
+
+  const btn = document.getElementById('credBtn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+
+  const { error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { captchaToken: _tsToken }
+  });
+
+  btn.disabled = false; btn.textContent = 'Create Account';
+
+  if (error) {
+    liMsg(error.message, 'err');
+    _resetTurnstile(); // tokens are single-use — must reset after every attempt, success or fail
+    return;
+  }
+
+  _resetTurnstile();
+  _showVerifyView(email);
+}
+
+// ── Verify the 6-digit code emailed by Supabase ──────────────────────
+async function doVerifyOtp() {
+  const code = document.getElementById('otpCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { verifyMsg('Enter the 6-digit code from your email.','err'); return; }
+
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.textContent = 'Verifying…';
+
+  const { error } = await sb.auth.verifyOtp({
+    email: _pendingEmail,
+    token: code,
+    type: 'email'   // current type for email-signup OTP verification (signup/magiclink are deprecated)
+  });
+
+  btn.disabled = false; btn.textContent = 'Verify & Continue';
+
+  if (error) { verifyMsg(error.message, 'err'); return; }
+  // Success — onAuthStateChange fires automatically, signs the user in, closes modal.
+}
+
+// ── Resend code, with cooldown to avoid hammering the email endpoint ─
+async function doResendCode() {
+  const link = document.getElementById('resendLink');
+  if (link.classList.contains('disabled')) return;
+  const { error } = await sb.auth.resend({ type: 'signup', email: _pendingEmail });
+  if (error) { verifyMsg(error.message, 'err'); return; }
+  verifyMsg('A new code has been sent.', 'ok');
+  _startResendCooldown(45);
+}
+function _startResendCooldown(seconds) {
+  clearInterval(_resendCooldown);
+  const link = document.getElementById('resendLink');
+  let remaining = seconds;
+  link.classList.add('disabled');
+  link.textContent = `Resend code (${remaining}s)`;
+  _resendCooldown = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(_resendCooldown);
+      link.classList.remove('disabled');
+      link.textContent = 'Resend code';
+    } else {
+      link.textContent = `Resend code (${remaining}s)`;
+    }
+  }, 1000);
+}
+
 async function doSignOut() { await sb.auth.signOut(); }
-function openModal()  { document.getElementById('authModal').classList.add('open'); }
-function closeModal() { document.getElementById('authModal').classList.remove('open'); }
-function liMsg(msg,type) { const el=document.getElementById('liMsg'); el.textContent=msg; el.className='mmsg '+type; }
-function showSignupNote() { toast('Please sign up on the main VinSnap page.'); closeModal(); }
+function openModal()  {
+  document.getElementById('authModal').classList.add('open');
+  switchAuthMode('signin');
+}
+function closeModal() {
+  document.getElementById('authModal').classList.remove('open');
+  clearInterval(_resendCooldown);
+}
+function liMsg(msg,type)     { const el=document.getElementById('liMsg');     el.textContent=msg; el.className='mmsg '+type; }
+function verifyMsg(msg,type) { const el=document.getElementById('verifyMsg'); el.textContent=msg; el.className='mmsg '+type; }
 
 // ══ CATEGORY ═════════════════════════════════════════════════════════
 function onCatChange() {
@@ -2115,7 +2262,7 @@ async function blobDownload(url, fname, btnEl) {
 
 function downloadAllCurrent() {
   if (!_currentImages.length) { toast('No images ready'); return; }
-  openFeedback(_currentImages, _currentJobId || 'job');
+  _blobQueue(_currentImages, _currentJobId || 'job');
 }
 
 function _blobQueue(images, jobSuffix) {
@@ -2492,128 +2639,13 @@ function jDlAll(jobId, e) {
     image_num:    parseInt(a.dataset.num || '1'),
     product_name: jName,
   }));
-  openFeedback(imgs, jobId);
+  _blobQueue(imgs, jobId);
 }
 
 function jEsc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-// ══ FEEDBACK ═════════════════════════════════════════════════════════
-let _fbRating       = 0;
-let _fbPendingQueue = null;
-let _fbJobId        = null;
-
-function openFeedback(images, jobSuffix) {
-  _fbPendingQueue = { images, jobSuffix };
-  _fbJobId        = jobSuffix;
-  _fbRating       = 0;
-  document.getElementById('fbForm').style.display   = 'block';
-  document.getElementById('fbThanks').style.display = 'none';
-  document.getElementById('fbText').value           = '';
-  document.getElementById('fbStarLbl').textContent  = '';
-  document.getElementById('fbSubmitBtn').disabled   = false;
-  document.getElementById('fbSubmitBtn').textContent = 'Submit Feedback';
-  document.querySelectorAll('.fb-star').forEach(s => s.classList.remove('on'));
-  document.getElementById('fbOverlay').classList.add('open');
-}
-
-function closeFeedback() {
-  document.getElementById('fbOverlay').classList.remove('open');
-}
-
-function setRating(val) {
-  _fbRating = val;
-  const labels = ['','😞 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Excellent!'];
-  document.getElementById('fbStarLbl').textContent = labels[val] || '';
-  document.querySelectorAll('.fb-star').forEach(s => {
-    s.classList.toggle('on', parseInt(s.dataset.v) <= val);
-  });
-}
-
-async function submitFeedback() {
-  const text = document.getElementById('fbText').value.trim();
-  const btn  = document.getElementById('fbSubmitBtn');
-  btn.disabled    = true;
-  btn.textContent = 'Saving…';
-  try {
-    await fetch(`${SB_URL}/rest/v1/job_feedback`, {
-      method:  'POST',
-      headers: {
-        'apikey':        SB_KEY,
-        'Authorization': 'Bearer ' + SB_KEY,
-        'Content-Type':  'application/json',
-        'Prefer':        'return=minimal',
-      },
-      body: JSON.stringify({
-        job_id:     _fbJobId   || null,
-        user_email: user ? user.email : null,
-        rating:     _fbRating  || null,
-        feedback:   text       || null,
-      })
-    });
-  } catch(e) {
-    console.warn('Feedback save failed:', e);
-  }
-  document.getElementById('fbForm').style.display   = 'none';
-  document.getElementById('fbThanks').style.display = 'block';
-  setTimeout(() => {
-    closeFeedback();
-    if (_fbPendingQueue) {
-      _blobQueue(_fbPendingQueue.images, _fbPendingQueue.jobSuffix);
-      _fbPendingQueue = null;
-    }
-  }, 1800);
-}
-
-function skipFeedback() {
-  closeFeedback();
-  if (_fbPendingQueue) {
-    _blobQueue(_fbPendingQueue.images, _fbPendingQueue.jobSuffix);
-    _fbPendingQueue = null;
-  }
-}
 
 </script>
-<!-- ── FEEDBACK MODAL ── -->
-<div class="fb-overlay" id="fbOverlay">
-  <div class="fb-card">
-    <button class="fb-close" onclick="closeFeedback()">✕</button>
-
-    <div id="fbForm">
-      <div class="fb-header">
-        <div class="fb-ico">📸</div>
-        <div class="fb-title">We hear you!</div>
-        <div class="fb-sub">Your feedback helps us improve VinSnap for every seller. Takes 30 seconds.</div>
-      </div>
-
-      <div class="fb-section">
-        <span class="fb-lbl">⭐ Are you satisfied with the photos?</span>
-        <div class="fb-stars" id="fbStars">
-          <span class="fb-star" data-v="1" onclick="setRating(1)">★</span>
-          <span class="fb-star" data-v="2" onclick="setRating(2)">★</span>
-          <span class="fb-star" data-v="3" onclick="setRating(3)">★</span>
-          <span class="fb-star" data-v="4" onclick="setRating(4)">★</span>
-          <span class="fb-star" data-v="5" onclick="setRating(5)">★</span>
-        </div>
-        <div class="fb-star-lbl" id="fbStarLbl"></div>
-      </div>
-
-      <div class="fb-section">
-        <span class="fb-lbl">💬 Any suggestions for improvement?</span>
-        <textarea class="fb-textarea" id="fbText" placeholder="Tell us what you loved or what we can do better…" maxlength="1000"></textarea>
-      </div>
-
-      <button class="fb-submit" id="fbSubmitBtn" onclick="submitFeedback()">Submit Feedback</button>
-      <button class="fb-skip" onclick="skipFeedback()">Skip and download</button>
-    </div>
-
-    <div class="fb-thanks" id="fbThanks">
-      <div class="fb-thanks-ico">🎉</div>
-      <div class="fb-thanks-title">Thank you!</div>
-      <div class="fb-thanks-sub">Your feedback means a lot. Downloading your photos now…</div>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
